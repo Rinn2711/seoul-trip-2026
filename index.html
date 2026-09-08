@@ -87,9 +87,9 @@
       <!-- 行程 & TO-DO -->
       <div v-show="activeTab === 'itinerary'" class="space-y-4 pt-2">
         <div v-if="currentDay === 'TODO'" class="space-y-4">
-          <h2 class="text-xl font-serif mb-4 flex items-center gap-2"><i class="fa-solid fa-clipboard-check text-autumn-secondary"></i> 出發前代辦清單</h2>
+          <h2 class="text-xl font-serif mb-4 flex items-center gap-2"><i class="fa-solid fa-clipboard-check text-autumn-secondary"></i> 出發前待辦清單</h2>
           <div class="bg-autumn-card rounded-2xl p-4 shadow-sm border border-autumn-border flex gap-2">
-            <input v-model="newTodo" @keyup.enter="addTodo" type="text" placeholder="新增代辦事項..." class="flex-1 outline-none bg-transparent text-sm">
+            <input v-model="newTodo" @keyup.enter="addTodo" type="text" placeholder="新增待辦事項..." class="flex-1 outline-none bg-transparent text-sm">
             <button @click="addTodo" class="bg-autumn-primary text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-opacity-90"><i class="fa-solid fa-plus"></i></button>
           </div>
           <div class="space-y-2 mt-4">
@@ -105,7 +105,7 @@
                 <button @click="saveTodo(todo)" class="text-green-600 font-bold text-sm"><i class="fa-solid fa-check"></i> 完成</button>
               </template>
             </div>
-            <div v-if="!todos.length" class="text-center text-autumn-muted py-6 text-sm">尚未新增代辦事項</div>
+            <div v-if="!todos.length" class="text-center text-autumn-muted py-6 text-sm">尚未新增待辦事項</div>
           </div>
         </div>
 
