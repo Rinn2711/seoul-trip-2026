@@ -145,7 +145,7 @@
               </div>
               <div class="flex-1 px-4 relative flex items-center justify-center">
                 <div class="w-full border-t-[1.5px] border-gray-300"></div>
-                <i class="fa-solid fa-plane text-autumn-primary absolute bg-white px-3 text-lg rotate-180"></i>
+                <i class="fa-solid fa-plane text-autumn-primary absolute bg-white px-3 text-lg"></i>
               </div>
               <div class="text-center w-16">
                 <p class="text-3xl font-bold text-autumn-text">TPE</p>
@@ -184,7 +184,8 @@
               </div>
             </div>
           </div>
-          <button @click="openAddEventModal" class="w-full mt-6 py-4 rounded-2xl bg-yellow-400 text-yellow-900 font-bold shadow-md flex items-center justify-center gap-2 hover:bg-yellow-500 transition-colors">
+          <!-- 更改回原本的虛線按鈕風格 -->
+          <button @click="openAddEventModal" class="w-full mt-6 py-4 rounded-2xl border border-dashed border-autumn-secondary text-autumn-primary font-medium flex items-center justify-center gap-2 hover:bg-autumn-secondary hover:bg-opacity-10 transition-colors">
             <i class="fa-solid fa-plus"></i> 新增一個行程
           </button>
         </div>
@@ -279,23 +280,27 @@
         </div>
 
         <div class="bg-autumn-card rounded-2xl p-6 shadow-sm border border-autumn-border space-y-4">
-          <div class="relative">
-            <label class="text-xs text-autumn-muted block mb-1">台幣 (TWD)</label>
-            <div class="flex items-center bg-autumn-bg rounded-xl border border-autumn-border overflow-hidden focus-within:border-autumn-primary transition-colors">
-              <span class="pl-4 font-bold text-autumn-text">NT$</span>
-              <input v-model="calcInputTwd" @input="updateFromTwd" type="number" placeholder="輸入台幣" class="w-full bg-transparent px-3 py-3 outline-none text-right font-medium text-lg">
-            </div>
-          </div>
-          <div class="flex justify-center -my-2 relative z-10">
-            <div class="w-8 h-8 rounded-full bg-autumn-text text-white flex items-center justify-center shadow-md">
-              <i class="fa-solid fa-arrow-right-arrow-left rotate-90 text-sm"></i>
-            </div>
-          </div>
+          <!-- 韓元 (KRW) -->
           <div class="relative">
             <label class="text-xs text-autumn-muted block mb-1">韓元 (KRW)</label>
             <div class="flex items-center bg-autumn-bg rounded-xl border border-autumn-border overflow-hidden focus-within:border-autumn-primary transition-colors">
               <span class="pl-4 font-bold text-autumn-text">₩</span>
               <input v-model="calcInputKrw" @input="updateFromKrw" type="number" placeholder="輸入韓元" class="w-full bg-transparent px-3 py-3 outline-none text-right font-medium text-lg">
+            </div>
+          </div>
+
+          <div class="flex justify-center -my-2 relative z-10">
+            <div class="w-8 h-8 rounded-full bg-autumn-text text-white flex items-center justify-center shadow-md">
+              <i class="fa-solid fa-arrow-right-arrow-left rotate-90 text-sm"></i>
+            </div>
+          </div>
+
+          <!-- 台幣 (TWD) -->
+          <div class="relative">
+            <label class="text-xs text-autumn-muted block mb-1">台幣 (TWD)</label>
+            <div class="flex items-center bg-autumn-bg rounded-xl border border-autumn-border overflow-hidden focus-within:border-autumn-primary transition-colors">
+              <span class="pl-4 font-bold text-autumn-text">NT$</span>
+              <input v-model="calcInputTwd" @input="updateFromTwd" type="number" placeholder="輸入台幣" class="w-full bg-transparent px-3 py-3 outline-none text-right font-medium text-lg">
             </div>
           </div>
         </div>
@@ -483,7 +488,6 @@
         const calcInputTwd = ref('');
         const calcInputKrw = ref('');
         
-        // 更新了儲存的 Key，讓預設行程全部清空生效
         const STORAGE_KEY = 'seoul_trip_data_2026_v4';
 
         const dayAreas = {
@@ -509,7 +513,6 @@
         const saveShopping = (item) => { item.name = item.editName; item.isEditing = false; };
 
         const categories = ['景點', '購物', '早餐', '午餐', '晚餐', '其他'];
-        // 清空所有中間天數的行程，第一天與最後一天僅保留獨立卡片，不在此陣列中
         const itinerary = ref({
           'Day 1': [], 'Day 2': [], 'Day 3': [], 'Day 4': [], 'Day 5': [], 'Day 6': [], 'Day 7': []
         });
