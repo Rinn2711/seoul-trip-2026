@@ -2,22 +2,18 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Travel to Seoul | 2026 Autumn</title>
-  <!-- 韓系質感楓葉圖示範例 (可替換成你喜歡的圖片網址) -->
-  <link rel="apple-touch-icon" href="https://images.emojiterra.com/google/android-nougat/512px/1f341.png">
-  <link rel="icon" type="image/png" href="https://images.emojiterra.com/google/android-nougat/512px/1f341.png">
-  <!-- 1. 給 iPhone 與電腦瀏覽器用的圖示 -->
+  
   <link rel="apple-touch-icon" href="https://images.emojiterra.com/google/android-nougat/512px/1f341.png">
   <link rel="icon" type="image/png" href="https://images.emojiterra.com/google/android-nougat/512px/1f341.png">
 
-  <!-- 2. 給 Android 原生 App 模式用的 PWA 設定 (可去掉 Chrome 小徽章) -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#F7F4EF">
   <link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%222026%20Trip%20to%20Seoul%22%2C%22short_name%22%3A%22SeoulTrip%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23F7F4EF%22%2C%22theme_color%22%3A%22%23F7F4EF%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fimages.emojiterra.com%2Fgoogle%2Fandroid-nougat%2F512px%2F1f341.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%2C%22purpose%22%3A%22any%20maskable%22%7D%5D%7D">
-  
+
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
@@ -28,15 +24,9 @@
     tailwind.config = {
       theme: {
         extend: {
-          fontFamily: {
-            sans: ['"Noto Sans TC"', 'sans-serif'],
-            serif: ['"Playfair Display"', 'serif'],
-          },
+          fontFamily: { sans: ['"Noto Sans TC"', 'sans-serif'], serif: ['"Playfair Display"', 'serif'] },
           colors: {
-            autumn: {
-              bg: '#F7F4EF', card: '#FFFFFF', primary: '#C16541', secondary: '#E0B589',
-              text: '#3D312A', muted: '#9E8F85', border: '#EAE1D8'
-            }
+            autumn: { bg: '#F7F4EF', card: '#FFFFFF', primary: '#C16541', secondary: '#E0B589', text: '#3D312A', muted: '#9E8F85', border: '#EAE1D8' }
           }
         }
       }
@@ -51,11 +41,11 @@
     .sortable-drag { cursor: grabbing !important; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
   </style>
 </head>
-<body class="flex justify-center h-screen w-screen overflow-hidden text-autumn-text">
+<body class="flex justify-center h-[100dvh] w-screen overflow-hidden text-autumn-text">
 
-  <div id="app" class="w-full max-w-md bg-autumn-bg h-full flex flex-col shadow-2xl relative">
+  <div id="app" class="w-full max-w-md bg-autumn-bg h-full flex flex-col shadow-2xl relative overflow-hidden">
     
-    <header class="pt-12 pb-4 px-6 bg-autumn-bg z-20 flex justify-between items-end">
+    <header class="pt-10 pb-3 px-6 bg-autumn-bg z-20 flex justify-between items-end flex-shrink-0">
       <div>
         <p class="text-xs text-autumn-primary font-bold tracking-widest mb-1 uppercase">2026 Autumn</p>
         <h1 class="text-3xl font-serif text-autumn-text leading-none">Travel to Seoul</h1>
@@ -73,7 +63,7 @@
       </div>
     </header>
 
-    <div v-show="['itinerary', 'expenses'].includes(activeTab)" class="bg-autumn-bg z-20 pb-2">
+    <div v-show="['itinerary', 'expenses'].includes(activeTab)" class="bg-autumn-bg z-20 pb-2 flex-shrink-0">
       <div class="flex overflow-x-auto hide-scrollbar px-6 py-2 space-x-3 items-center">
         <button v-show="activeTab === 'itinerary'" @click="currentDay = 'TODO'" class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300" :class="currentDay === 'TODO' ? 'bg-autumn-text text-white shadow-md' : 'bg-autumn-card border border-autumn-border text-autumn-muted'">
           <i class="fa-solid fa-list-check mr-1"></i> TO-DO
@@ -84,7 +74,7 @@
       </div>
     </div>
 
-    <main class="flex-1 overflow-y-auto hide-scrollbar pb-24 relative px-6">
+    <main class="flex-1 overflow-y-auto hide-scrollbar pb-6 relative px-6">
       
       <!-- 1. 行程 & TO-DO -->
       <div v-show="activeTab === 'itinerary'" class="space-y-4 pt-2">
@@ -112,7 +102,6 @@
         </div>
 
         <div v-else>
-          <!-- 每日區域標示 -->
           <div class="bg-autumn-card border border-autumn-border rounded-xl p-3 mb-4 shadow-sm text-center">
             <p class="text-[10px] text-autumn-muted mb-0.5 tracking-wider">今日探索區域</p>
             <h3 class="font-bold text-autumn-primary text-sm"><i class="fa-solid fa-location-dot mr-1"></i>{{ dayAreas[currentDay] }}</h3>
@@ -225,7 +214,48 @@
         </div>
       </div>
 
-      <!-- 4. 購物清單 -->
+      <!-- 4. 即時匯率轉換 (全新功能) -->
+      <div v-show="activeTab === 'exchange'" class="pt-4 space-y-6">
+        <h2 class="text-2xl font-serif text-autumn-text mb-2"><i class="fa-solid fa-money-bill-transfer text-autumn-primary mr-2"></i>即時匯率轉換</h2>
+        <div class="bg-white p-4 rounded-2xl border border-autumn-border shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-[11px] text-autumn-muted">目前網路即時匯率</p>
+            <p class="font-bold text-autumn-text text-lg">1 TWD = {{ liveExchangeRate.toFixed(2) }} KRW</p>
+          </div>
+          <div class="w-10 h-10 rounded-full bg-autumn-bg flex items-center justify-center text-autumn-secondary">
+            <i class="fa-solid fa-globe"></i>
+          </div>
+        </div>
+
+        <div class="bg-autumn-card rounded-2xl p-6 shadow-sm border border-autumn-border space-y-4">
+          <!-- 台幣輸入 -->
+          <div class="relative">
+            <label class="text-xs text-autumn-muted block mb-1">台幣 (TWD)</label>
+            <div class="flex items-center bg-autumn-bg rounded-xl border border-autumn-border overflow-hidden focus-within:border-autumn-primary transition-colors">
+              <span class="pl-4 font-bold text-autumn-text">NT$</span>
+              <input v-model="calcInputTwd" @input="updateFromTwd" type="number" placeholder="輸入台幣" class="w-full bg-transparent px-3 py-3 outline-none text-right font-medium text-lg">
+            </div>
+          </div>
+
+          <div class="flex justify-center -my-2 relative z-10">
+            <div class="w-8 h-8 rounded-full bg-autumn-text text-white flex items-center justify-center shadow-md">
+              <i class="fa-solid fa-arrow-right-arrow-left rotate-90 text-sm"></i>
+            </div>
+          </div>
+
+          <!-- 韓幣輸入 -->
+          <div class="relative">
+            <label class="text-xs text-autumn-muted block mb-1">韓元 (KRW)</label>
+            <div class="flex items-center bg-autumn-bg rounded-xl border border-autumn-border overflow-hidden focus-within:border-autumn-primary transition-colors">
+              <span class="pl-4 font-bold text-autumn-text">₩</span>
+              <input v-model="calcInputKrw" @input="updateFromKrw" type="number" placeholder="輸入韓元" class="w-full bg-transparent px-3 py-3 outline-none text-right font-medium text-lg">
+            </div>
+          </div>
+        </div>
+        <p class="text-[10px] text-center text-autumn-muted mt-2">匯率資料由開源 API 即時提供<br>更新時間: {{ lastRateUpdate }}</p>
+      </div>
+
+      <!-- 5. 購物清單 -->
       <div v-show="activeTab === 'shopping'" class="pt-4 space-y-4">
         <h2 class="text-2xl font-serif text-autumn-text flex items-center gap-2 mb-6"><i class="fa-solid fa-bag-shopping text-autumn-primary"></i> 購物清單</h2>
         <div class="bg-white rounded-full p-2 shadow-sm border border-autumn-border flex gap-2">
@@ -249,7 +279,7 @@
         </div>
       </div>
 
-      <!-- 5. 資訊站 -->
+      <!-- 6. 資訊站 -->
       <div v-show="activeTab === 'info'" class="pt-4 space-y-6">
         <div class="bg-white p-4 rounded-2xl border border-autumn-border shadow-sm">
           <h3 class="font-bold text-sm text-autumn-primary mb-2"><i class="fa-solid fa-share-nodes"></i> 和旅伴共用行程</h3>
@@ -318,21 +348,25 @@
 
     </main>
 
-    <!-- 底部導航 -->
-    <nav class="absolute bottom-0 w-full bg-autumn-card border-t border-autumn-border flex justify-around items-center pb-safe pt-2 z-30 shadow-[0_-10px_25px_rgba(0,0,0,0.03)]">
-      <button @click="activeTab = 'itinerary'; if(currentDay === 'TODO') currentDay = 'Day 1'" :class="activeTab === 'itinerary' ? 'text-autumn-primary' : 'text-autumn-muted'" class="flex flex-col items-center p-2 w-16 transition-colors">
+    <!-- 底部導航 (平均分配 5 個按鈕) -->
+    <nav class="w-full bg-autumn-card border-t border-autumn-border flex justify-between items-center pb-5 pt-2 px-1 z-30 shadow-[0_-10px_25px_rgba(0,0,0,0.03)] flex-shrink-0">
+      <button @click="activeTab = 'itinerary'; if(currentDay === 'TODO') currentDay = 'Day 1'" :class="activeTab === 'itinerary' ? 'text-autumn-primary' : 'text-autumn-muted'" class="flex flex-col items-center p-2 flex-1 transition-colors">
         <i class="fa-solid fa-route mb-1 text-lg"></i>
         <span class="text-[10px] font-medium">行程</span>
       </button>
-      <button @click="activeTab = 'map'" :class="activeTab === 'map' ? 'text-autumn-primary' : 'text-autumn-muted'" class="flex flex-col items-center p-2 w-16 transition-colors">
+      <button @click="activeTab = 'map'" :class="activeTab === 'map' ? 'text-autumn-primary' : 'text-autumn-muted'" class="flex flex-col items-center p-2 flex-1 transition-colors">
         <i class="fa-solid fa-map-location-dot mb-1 text-lg"></i>
         <span class="text-[10px] font-medium">地圖</span>
       </button>
-      <button @click="activeTab = 'expenses'" :class="activeTab === 'expenses' ? 'text-autumn-primary' : 'text-autumn-muted'" class="flex flex-col items-center p-2 w-16 transition-colors">
+      <button @click="activeTab = 'expenses'" :class="activeTab === 'expenses' ? 'text-autumn-primary' : 'text-autumn-muted'" class="flex flex-col items-center p-2 flex-1 transition-colors">
         <i class="fa-solid fa-wallet mb-1 text-lg"></i>
         <span class="text-[10px] font-medium">記帳</span>
       </button>
-      <button @click="activeTab = 'info'" :class="activeTab === 'info' ? 'text-autumn-primary' : 'text-autumn-muted'" class="flex flex-col items-center p-2 w-16 transition-colors">
+      <button @click="activeTab = 'exchange'" :class="activeTab === 'exchange' ? 'text-autumn-primary' : 'text-autumn-muted'" class="flex flex-col items-center p-2 flex-1 transition-colors">
+        <i class="fa-solid fa-money-bill-transfer mb-1 text-lg"></i>
+        <span class="text-[10px] font-medium">匯率</span>
+      </button>
+      <button @click="activeTab = 'info'" :class="activeTab === 'info' ? 'text-autumn-primary' : 'text-autumn-muted'" class="flex flex-col items-center p-2 flex-1 transition-colors">
         <i class="fa-solid fa-circle-info mb-1 text-lg"></i>
         <span class="text-[10px] font-medium">資訊</span>
       </button>
@@ -340,7 +374,7 @@
 
     <!-- 新增/編輯行程 Modal -->
     <div v-if="showAddModal" class="absolute inset-0 bg-black/50 z-50 flex items-center justify-center p-6 backdrop-blur-sm">
-      <div class="bg-autumn-card w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-autumn-border">
+      <div class="bg-autumn-card w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-autumn-border max-h-[85vh] overflow-y-auto">
         <h3 class="font-serif text-xl mb-4 text-autumn-text">{{ isEditingEvent ? '編輯' : '新增' }} {{ currentDay }} 行程</h3>
         <div class="space-y-4">
           <div class="flex gap-3">
@@ -396,7 +430,13 @@
         const tripDays = ref(['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7']);
         const currentDay = ref('Day 1');
         const currentWeather = ref(null);
-        const EXCHANGE_RATE = 42.5;
+        
+        // 匯率相關資料
+        const liveExchangeRate = ref(42.5); // 預設值，API 讀取成功後會被覆蓋
+        const lastRateUpdate = ref('讀取中...');
+        const calcInputTwd = ref('');
+        const calcInputKrw = ref('');
+        
         const STORAGE_KEY = 'seoul_trip_data_2026_v3';
 
         const dayAreas = {
@@ -415,7 +455,6 @@
         const startEditTodo = (todo) => { todo.editText = todo.text; todo.isEditing = true; };
         const saveTodo = (todo) => { todo.text = todo.editText; todo.isEditing = false; };
 
-        // 購物清單全清空
         const shoppingList = ref([]);
         const newShoppingItem = ref('');
         const addShoppingItem = () => { if(newShoppingItem.value.trim()) { shoppingList.value.push({ name: newShoppingItem.value.trim(), bought: false, isEditing: false, editName: '' }); newShoppingItem.value = ''; } };
@@ -424,21 +463,13 @@
 
         const categories = ['景點', '購物', '早餐', '午餐', '晚餐', '其他'];
         const itinerary = ref({
-          'Day 1': [
-            { id: 1, time: '13:20', category: '其他', place: '前往仁川', transport: '飛機', feature: '13:20 桃園起飛 ➔ 15:20 抵達仁川', note: '', naverLink: '' }
-          ], 
+          'Day 1': [{ id: 1, time: '13:20', category: '其他', place: '前往仁川', transport: '飛機', feature: '13:20 桃園起飛 ➔ 15:20 抵達仁川', note: '', naverLink: '' }], 
           'Day 2': [], 
-          'Day 3': [
-            { id: 2, time: '18:00', category: '購物', place: '樂天超市', transport: '', feature: '採買伴手禮', note: '', naverLink: '' }
-          ], 
-          'Day 4': [
-            { id: 4, time: '19:00', category: '景點', place: '漢江公園', transport: '', feature: '看夜景', note: '', naverLink: '' }
-          ], 
+          'Day 3': [{ id: 2, time: '18:00', category: '購物', place: '樂天超市', transport: '', feature: '採買伴手禮', note: '', naverLink: '' }], 
+          'Day 4': [{ id: 4, time: '19:00', category: '景點', place: '漢江公園', transport: '', feature: '看夜景', note: '', naverLink: '' }], 
           'Day 5': [], 
           'Day 6': [], 
-          'Day 7': [
-            { id: 3, time: '15:10', category: '其他', place: '返回桃園', transport: '飛機', feature: '15:10 仁川起飛 ➔ 17:50 抵達桃園', note: '', naverLink: '' }
-          ] 
+          'Day 7': [{ id: 3, time: '15:10', category: '其他', place: '返回桃園', transport: '飛機', feature: '15:10 仁川起飛 ➔ 17:50 抵達桃園', note: '', naverLink: '' }] 
         });
         
         const showAddModal = ref(false);
@@ -474,24 +505,31 @@
         };
         watch(currentDay, () => nextTick(() => initSortable()));
         watch(activeTab, (newVal) => { 
-          if(newVal === 'expenses' && currentDay.value === 'TODO') {
-            currentDay.value = 'Day 1';
-          }
-          if(newVal === 'itinerary' && currentDay.value !== 'TODO') {
-            nextTick(() => initSortable());
-          } 
+          if(newVal === 'expenses' && currentDay.value === 'TODO') currentDay.value = 'Day 1';
+          if(newVal === 'itinerary' && currentDay.value !== 'TODO') nextTick(() => initSortable());
         });
 
         const mapEvents = computed(() => itinerary.value[currentDay.value === 'TODO' ? 'Day 1' : currentDay.value] || []);
 
+        // 記帳與匯率
         const expenses = ref({ 'Day 1': [], 'Day 2': [], 'Day 3': [], 'Day 4': [], 'Day 5': [], 'Day 6': [], 'Day 7': [] });
         const newExpense = ref({ item: '', amount: '', currency: 'KRW' });
         const editingExpenseIdx = ref(null);
+        
+        // 讓記帳系統動態抓取網路即時匯率進行換算
         const currentDayExpensesList = computed(() => {
           const day = currentDay.value === 'TODO' ? 'Day 1' : currentDay.value;
-          return (expenses.value[day] || []).map(exp => ({ ...exp, krw: exp.currency === 'KRW' ? Number(exp.amount) : Math.round(Number(exp.amount) * EXCHANGE_RATE), twd: exp.currency === 'TWD' ? Number(exp.amount) : Math.round(Number(exp.amount) / EXCHANGE_RATE), originalAmount: Number(exp.amount) }));
+          const rate = liveExchangeRate.value;
+          return (expenses.value[day] || []).map(exp => ({ 
+            ...exp, 
+            krw: exp.currency === 'KRW' ? Number(exp.amount) : Math.round(Number(exp.amount) * rate), 
+            twd: exp.currency === 'TWD' ? Number(exp.amount) : Math.round(Number(exp.amount) / rate), 
+            originalAmount: Number(exp.amount) 
+          }));
         });
+        
         const currentDayExpense = computed(() => currentDayExpensesList.value.reduce((acc, exp) => { acc.krw += exp.krw; acc.twd += exp.twd; return acc; }, { krw: 0, twd: 0 }));
+        
         const saveExpense = () => {
           if(!newExpense.value.item || !newExpense.value.amount) return;
           const day = currentDay.value === 'TODO' ? 'Day 1' : currentDay.value;
@@ -515,6 +553,32 @@
         const startEditInfo = (info) => { info.editText = info.text; info.isEditing = true; };
         const saveInfo = (info) => { info.text = info.editText; info.isEditing = false; };
 
+        // API 串接：抓取即時匯率
+        const fetchRealTimeRate = async () => {
+          try {
+            // 使用開源免費且無須 Key 的 Currency API
+            const res = await fetch('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/twd.json');
+            const data = await res.json();
+            if(data && data.twd && data.twd.krw) {
+              liveExchangeRate.value = data.twd.krw;
+              lastRateUpdate.value = new Date(data.date).toLocaleDateString();
+            }
+          } catch (error) {
+            console.error('即時匯率抓取失敗，使用預設值', error);
+            lastRateUpdate.value = '離線預設值';
+          }
+        };
+
+        // 匯率雙向轉換邏輯
+        const updateFromTwd = () => {
+          if(!calcInputTwd.value) { calcInputKrw.value = ''; return; }
+          calcInputKrw.value = Math.round(calcInputTwd.value * liveExchangeRate.value);
+        };
+        const updateFromKrw = () => {
+          if(!calcInputKrw.value) { calcInputTwd.value = ''; return; }
+          calcInputTwd.value = (calcInputKrw.value / liveExchangeRate.value).toFixed(0);
+        };
+
         const fetchWeather = async () => {
           try { const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=37.5665&longitude=126.9780&current_weather=true'); const data = await res.json(); currentWeather.value = Math.round(data.current_weather.temperature); } catch (e) {}
         };
@@ -529,9 +593,7 @@
           localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
         };
 
-        watch([todos, shoppingList, itinerary, expenses, backupSpots, generalInfo], () => {
-          saveData();
-        }, { deep: true });
+        watch([todos, shoppingList, itinerary, expenses, backupSpots, generalInfo], () => { saveData(); }, { deep: true });
 
         onMounted(() => {
           const savedData = localStorage.getItem(STORAGE_KEY);
@@ -548,17 +610,14 @@
           }
           isInitialLoad = false;
           fetchWeather();
+          fetchRealTimeRate();
           nextTick(() => initSortable());
         });
 
         const exportData = () => {
           const shareData = { itinerary: itinerary.value, backupSpots: backupSpots.value, generalInfo: generalInfo.value };
           const base64Code = btoa(encodeURIComponent(JSON.stringify(shareData)));
-          navigator.clipboard.writeText(base64Code).then(() => {
-            alert('✅ 行程代碼已複製成功！\n\n請將這串代碼傳給你的旅伴，讓她貼在「匯入代碼」中即可同步行程。');
-          }).catch(() => {
-            prompt('無法自動複製，請手動複製以下代碼傳給旅伴：', base64Code);
-          });
+          navigator.clipboard.writeText(base64Code).then(() => alert('✅ 行程代碼已複製成功！\n\n請將這串代碼傳給你的旅伴。')).catch(() => prompt('無法自動複製，請手動複製以下代碼：', base64Code));
         };
 
         const importData = () => {
@@ -570,9 +629,7 @@
             if(parsedData.backupSpots) backupSpots.value = parsedData.backupSpots;
             if(parsedData.generalInfo) generalInfo.value = parsedData.generalInfo;
             alert('🎉 匯入成功！\n行程與資訊已更新，你的記帳與購物車維持原樣不受影響喔。');
-          } catch (e) {
-            alert('❌ 代碼格式錯誤，請確認你複製的是完整的代碼。');
-          }
+          } catch (e) { alert('❌ 代碼格式錯誤，請確認完整性。'); }
         };
 
         return {
@@ -582,6 +639,7 @@
           categories, showAddModal, isEditingEvent, newEvent, currentDayEvents, openAddEventModal, openEditEventModal, saveEvent, deleteEvent,
           mapEvents,
           expenses, newExpense, currentDayExpensesList, currentDayExpense, saveExpense, editingExpenseIdx, startEditExpense, cancelEditExpense, deleteExpense,
+          liveExchangeRate, lastRateUpdate, calcInputTwd, calcInputKrw, updateFromTwd, updateFromKrw,
           backupSpots, addEmptyBackup, startEditBackup, saveBackup,
           generalInfo, newInfo, addInfo, startEditInfo, saveInfo,
           exportData, importData
