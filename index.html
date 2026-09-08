@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Trip to Seoul | 2026 Autumn</title>
+  <title>Travel to Seoul | 2026 Autumn</title>
   
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -45,7 +45,7 @@
     <header class="pt-12 pb-4 px-6 bg-autumn-bg z-20 flex justify-between items-end">
       <div>
         <p class="text-xs text-autumn-primary font-bold tracking-widest mb-1 uppercase">2026 Autumn</p>
-        <h1 class="text-3xl font-serif text-autumn-text leading-none">Trip to Seoul</h1>
+        <h1 class="text-3xl font-serif text-autumn-text leading-none">Travel to Seoul</h1>
       </div>
       <div class="flex gap-4">
         <div class="flex flex-col items-center justify-center">
@@ -62,7 +62,6 @@
 
     <div v-show="['itinerary', 'expenses'].includes(activeTab)" class="bg-autumn-bg z-20 pb-2">
       <div class="flex overflow-x-auto hide-scrollbar px-6 py-2 space-x-3 items-center">
-        <!-- 只有在行程頁面才顯示 TO-DO -->
         <button v-show="activeTab === 'itinerary'" @click="currentDay = 'TODO'" class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300" :class="currentDay === 'TODO' ? 'bg-autumn-text text-white shadow-md' : 'bg-autumn-card border border-autumn-border text-autumn-muted'">
           <i class="fa-solid fa-list-check mr-1"></i> TO-DO
         </button>
@@ -385,17 +384,16 @@
         const currentDay = ref('Day 1');
         const currentWeather = ref(null);
         const EXCHANGE_RATE = 42.5;
-        // 更改儲存 Key 以確保新功能與預設資料能夠載入
-        const STORAGE_KEY = 'seoul_trip_data_2026_v2';
+        const STORAGE_KEY = 'seoul_trip_data_2026_v3';
 
         const dayAreas = {
           'Day 1': '明洞',
           'Day 2': '弘大、延南洞',
-          'Day 3': '聖水、明洞',
+          'Day 3': '聖水、明洞、樂天超市',
           'Day 4': '韓屋村、三清洞、景福宮、漢江公園',
           'Day 5': '江南、新沙、狎鷗亭',
           'Day 6': '東大門、廣藏市場、東廟、漢南洞',
-          'Day 7': '樂天超市、機場'
+          'Day 7': '機場'
         };
 
         const todos = ref([]);
@@ -404,9 +402,8 @@
         const startEditTodo = (todo) => { todo.editText = todo.text; todo.isEditing = true; };
         const saveTodo = (todo) => { todo.text = todo.editText; todo.isEditing = false; };
 
-        const shoppingList = ref([
-          { name: '廣藏市場棉被 (可請店家直接運回台灣)', bought: false, isEditing: false, editName: '' }
-        ]);
+        // 購物清單全清空
+        const shoppingList = ref([]);
         const newShoppingItem = ref('');
         const addShoppingItem = () => { if(newShoppingItem.value.trim()) { shoppingList.value.push({ name: newShoppingItem.value.trim(), bought: false, isEditing: false, editName: '' }); newShoppingItem.value = ''; } };
         const startEditShopping = (item) => { item.editName = item.name; item.isEditing = true; };
@@ -418,14 +415,15 @@
             { id: 1, time: '13:20', category: '其他', place: '前往仁川', transport: '飛機', feature: '13:20 桃園起飛 ➔ 15:20 抵達仁川', note: '', naverLink: '' }
           ], 
           'Day 2': [], 
-          'Day 3': [], 
+          'Day 3': [
+            { id: 2, time: '18:00', category: '購物', place: '樂天超市', transport: '', feature: '採買伴手禮', note: '', naverLink: '' }
+          ], 
           'Day 4': [
             { id: 4, time: '19:00', category: '景點', place: '漢江公園', transport: '', feature: '看夜景', note: '', naverLink: '' }
           ], 
           'Day 5': [], 
           'Day 6': [], 
           'Day 7': [
-            { id: 2, time: '10:00', category: '購物', place: '樂天超市', transport: '', feature: '採買伴手禮', note: '最後一個行程', naverLink: '' },
             { id: 3, time: '15:10', category: '其他', place: '返回桃園', transport: '飛機', feature: '15:10 仁川起飛 ➔ 17:50 抵達桃園', note: '', naverLink: '' }
           ] 
         });
