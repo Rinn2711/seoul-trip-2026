@@ -3,17 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>2026 Travel to Seoul | 2026 Autumn</title>
+  <title>Travel to Seoul | 2026 Autumn</title>
   
-  <link rel="apple-touch-icon" href="https://images.emojiterra.com/google/android-nougat/512px/1f341.png">
-  <link rel="icon" type="image/png" href="https://images.emojiterra.com/google/android-nougat/512px/1f341.png">
+  <!-- 改用自己的圖示檔名 ./app-icon.png -->
+  <link rel="apple-touch-icon" href="./app-icon.png">
+  <link rel="icon" type="image/png" href="./app-icon.png">
 
   <!-- PWA 全螢幕與應用程式設定 -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#F7F4EF">
-  <link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%222026%20Trip%20to%20Seoul%22%2C%22short_name%22%3A%22SeoulTrip%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23F7F4EF%22%2C%22theme_color%22%3A%22%23F7F4EF%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fimages.emojiterra.com%2Fgoogle%2Fandroid-nougat%2F512px%2F1f341.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%2C%22purpose%22%3A%22any%20maskable%22%7D%5D%7D">
+  <link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%222026%20Trip%20to%20Seoul%22%2C%22short_name%22%3A%22SeoulTrip%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23F7F4EF%22%2C%22theme_color%22%3A%22%23F7F4EF%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22.%2Fapp-icon.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%2C%22purpose%22%3A%22any%20maskable%22%7D%5D%7D">
 
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -244,7 +245,6 @@
             <h3 class="font-bold text-sm text-autumn-text mb-4 flex items-center gap-2"><i class="fa-solid fa-chart-pie text-autumn-primary"></i> 類別花費比例</h3>
             <div class="h-48 w-full relative">
               <canvas id="expenseChart"></canvas>
-              <!-- 若無資料顯示遮罩 -->
               <div v-if="grandTotal.krw === 0" class="absolute inset-0 flex items-center justify-center bg-white/80 text-sm text-autumn-muted z-10 font-medium">尚無花費紀錄</div>
             </div>
           </div>
@@ -272,7 +272,6 @@
           <div class="bg-autumn-bg border border-autumn-border rounded-2xl p-4 transition-colors mb-6" :class="{'border-autumn-primary shadow-sm bg-white': editingExpenseIdx !== null}">
             <h3 class="text-sm font-bold mb-3">{{ editingExpenseIdx !== null ? '編輯紀錄' : '新增花費' }}</h3>
             <div class="space-y-3">
-              <!-- 加入分類選擇 -->
               <div class="flex gap-2">
                 <select v-model="newExpense.category" class="bg-white rounded-xl px-2 py-2.5 text-sm outline-none border border-autumn-border w-28 text-autumn-text font-medium">
                   <option v-for="cat in expenseCategories" :key="cat" :value="cat">{{ cat }}</option>
@@ -537,7 +536,6 @@
         const calcInputTwd = ref('');
         const calcInputKrw = ref('');
         
-        // 維持 v5 金鑰，確保你之前記錄的資料可以讀取進來
         const STORAGE_KEY = 'seoul_trip_data_2026_v5';
 
         const dayAreas = {
@@ -609,7 +607,6 @@
           return itinerary.value[dayToLoad] || [];
         });
 
-        // 記帳與分類設定
         const expenseCategories = ['食物', '飲品', '交通', '消費', '娛樂', '住宿', '其他'];
         const expenses = ref({ 'Pre-trip': [], 'Day 1': [], 'Day 2': [], 'Day 3': [], 'Day 4': [], 'Day 5': [], 'Day 6': [], 'Day 7': [] });
         const newExpense = ref({ item: '', amount: '', currency: 'KRW', category: '食物' });
@@ -623,7 +620,7 @@
             krw: exp.currency === 'KRW' ? Number(exp.amount) : Math.round(Number(exp.amount) * rate), 
             twd: exp.currency === 'TWD' ? Number(exp.amount) : Math.round(Number(exp.amount) / rate), 
             originalAmount: Number(exp.amount),
-            category: exp.category || '其他' // 保護舊資料
+            category: exp.category || '其他'
           }));
         });
         
@@ -639,7 +636,6 @@
           return { krw, twd };
         };
 
-        // 計算各類別總花費 (給圓餅圖使用)
         const categoryTotals = computed(() => {
           const totals = {};
           expenseCategories.forEach(cat => totals[cat] = 0);
@@ -665,7 +661,6 @@
            return { krw: totalKrw, twd: totalTwd };
         });
 
-        // 圓餅圖實例與渲染邏輯
         let chartInstance = null;
         const renderChart = () => {
           const ctx = document.getElementById('expenseChart');
@@ -673,8 +668,6 @@
           
           const labels = expenseCategories;
           const data = labels.map(label => categoryTotals.value[label]);
-          
-          // 秋日質感配色
           const bgColors = ['#C16541', '#E0B589', '#9E8F85', '#D4CFC7', '#5C4B41', '#8F7A6E', '#F7D6B0'];
 
           if (chartInstance) {
@@ -718,7 +711,6 @@
           }
         };
 
-        // 監聽並自動渲染圖表
         watch([activeTab, currentDay, expenses], () => {
           if (activeTab.value === 'expenses' && currentDay.value === 'Total') {
             nextTick(() => renderChart());
@@ -801,7 +793,6 @@
               if(parsed.shoppingList) shoppingList.value = parsed.shoppingList;
               if(parsed.itinerary) itinerary.value = parsed.itinerary;
               if(parsed.expenses) {
-                 // 匯入舊資料時，自動為沒有 category 的項目補上「其他」
                  Object.keys(parsed.expenses).forEach(day => {
                     parsed.expenses[day] = parsed.expenses[day].map(e => ({...e, category: e.category || '其他'}));
                  });
