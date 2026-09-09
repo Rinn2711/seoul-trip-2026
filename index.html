@@ -259,7 +259,7 @@
         </div>
       </div>
 
-      <!-- 地圖 (已替換為您在 GitHub 上傳的高畫質地鐵圖) -->
+      <!-- 地圖 -->
       <div v-show="activeTab === 'map'" class="pt-4 space-y-6">
         
         <div class="bg-white p-4 rounded-2xl shadow-sm border border-autumn-border">
@@ -454,7 +454,10 @@
         
         <div class="bg-white rounded-2xl p-4 shadow-sm border border-autumn-border space-y-3">
           <input v-model="newShoppingItem.name" type="text" placeholder="商品名稱 (若有圖片可不填)" class="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 outline-none text-sm focus:border-autumn-secondary transition">
-          <input v-model="newShoppingItem.store" type="text" placeholder="在哪裡買？(選填，例如：Olive Young)" class="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 outline-none text-sm focus:border-autumn-secondary transition">
+          <div class="flex gap-2">
+            <input v-model="newShoppingItem.store" type="text" placeholder="店家 (如Olive Young)" class="w-2/5 bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 outline-none text-sm focus:border-autumn-secondary transition">
+            <input v-model="newShoppingItem.note" type="text" placeholder="備註 (色號、尺寸、數量)" class="w-3/5 bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 outline-none text-sm focus:border-autumn-secondary transition">
+          </div>
           
           <div class="flex justify-between items-center pt-1">
             <label class="cursor-pointer bg-autumn-bg px-3 py-1.5 rounded-lg text-xs font-medium text-autumn-text border border-autumn-border flex items-center gap-1.5 hover:bg-autumn-secondary hover:text-white transition">
@@ -470,29 +473,48 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-1 gap-3 mt-6">
-          <div v-for="(item, index) in shoppingList" :key="index" class="bg-autumn-card rounded-2xl p-4 shadow-sm border border-autumn-border flex gap-3">
+        <div id="shopping-list-container" class="grid grid-cols-1 gap-3 mt-6">
+          <div v-for="(item, index) in shoppingList" :key="item.id" class="bg-autumn-card rounded-2xl p-4 shadow-sm border border-autumn-border flex gap-3 group relative">
+            
             <template v-if="!item.isEditing">
+              <!-- 新增拖曳把手 -->
+              <div class="flex flex-col pt-1 text-gray-200 cursor-grab shopping-drag-handle hover:text-autumn-primary flex-shrink-0">
+                <i class="fa-solid fa-grip-vertical"></i>
+              </div>
+              
               <input type="checkbox" v-model="item.bought" @change="saveData" class="mt-1 accent-autumn-primary rounded w-5 h-5 cursor-pointer flex-shrink-0">
               <div class="flex-1 overflow-hidden">
                 <p class="text-sm font-bold text-autumn-text break-words" :class="{'line-through text-autumn-muted': item.bought}">{{ item.name || '(未命名的商品照片)' }}</p>
+                
                 <p v-if="item.store" class="text-[10px] text-autumn-primary mt-1 font-medium bg-autumn-bg inline-block px-2 py-0.5 rounded" :class="{'opacity-50': item.bought}">
                   <i class="fa-solid fa-store mr-1"></i>{{ item.store }}
                 </p>
-                <div v-if="item.image" class="mt-2">
-                  <img :src="item.image" class="h-24 w-24 object-cover rounded-xl border border-gray-200 shadow-sm" :class="{'opacity-50': item.bought}">
+                
+                <!-- 新增備註顯示 -->
+                <p v-if="item.note" class="text-[11px] text-autumn-text mt-1.5 bg-gray-50 p-1.5 rounded-lg border border-gray-100" :class="{'opacity-50': item.bought}">
+                  <i class="fa-regular fa-comment-dots mr-1 opacity-70"></i>{{ item.note }}
+                </p>
+
+                <!-- 照片放大預覽 -->
+                <div v-if="item.image" class="mt-2 relative inline-block">
+                  <img :src="item.image" @click="viewingImage = item.image" class="h-24 w-24 object-cover rounded-xl border border-gray-200 shadow-sm cursor-pointer hover:opacity-80 transition" :class="{'opacity-50': item.bought}">
+                  <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 hover:opacity-100 transition-opacity">
+                     <i class="fa-solid fa-magnifying-glass-plus text-white text-xl drop-shadow-md"></i>
+                  </div>
                 </div>
               </div>
               <div class="flex flex-col gap-3">
                 <button @click="startEditShopping(item)" class="text-gray-400 hover:text-autumn-primary p-1"><i class="fa-solid fa-pen text-sm"></i></button>
-                <button @click="shoppingList.splice(index, 1)" class="text-gray-400 hover:text-red-400 p-1"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                <button @click="shoppingList.splice(index, 1); saveData();" class="text-gray-400 hover:text-red-400 p-1"><i class="fa-solid fa-trash-can text-sm"></i></button>
               </div>
             </template>
             
             <template v-else>
-              <div class="flex-1 space-y-2">
+              <div class="flex-1 space-y-2 ml-4">
                 <input v-model="item.editName" type="text" placeholder="商品名稱" class="w-full border-b border-autumn-primary outline-none bg-transparent text-sm py-1 font-bold text-autumn-text">
                 <input v-model="item.editStore" type="text" placeholder="在哪裡買？" class="w-full border-b border-autumn-border outline-none bg-transparent text-xs py-1 text-autumn-muted">
+                <!-- 編輯備註 -->
+                <input v-model="item.editNote" type="text" placeholder="備註 (色號、數量、尺寸...)" class="w-full border-b border-autumn-border outline-none bg-transparent text-xs py-1 text-autumn-text">
                 
                 <div class="flex gap-3 items-end pt-2">
                    <label class="cursor-pointer bg-gray-100 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-600 flex items-center gap-1 hover:bg-gray-200">
@@ -522,54 +544,74 @@
             <button @click="importData" class="flex-1 bg-autumn-secondary text-white py-2 rounded-lg text-xs font-medium"><i class="fa-solid fa-download"></i> 匯入代碼</button>
           </div>
         </div>
+        
         <h2 class="text-2xl font-serif text-autumn-text mb-2">實用資訊整理</h2>
+        
+        <!-- 備用參考景點 -->
         <div class="space-y-3">
           <h3 class="font-bold text-sm text-autumn-primary flex items-center gap-2"><i class="fa-solid fa-map-pin"></i> 備用參考景點</h3>
-          <div class="space-y-3">
-            <div v-for="(spot, index) in backupSpots" :key="spot.id" class="bg-autumn-card rounded-2xl p-4 shadow-sm border border-autumn-border">
-              <template v-if="!spot.isEditing">
-                <div class="flex justify-between items-start">
-                  <div class="flex-1">
-                    <h4 class="font-bold text-sm text-autumn-text mb-1">{{ spot.name }}</h4>
-                    <p v-if="spot.note" class="text-xs text-autumn-muted mb-2">{{ spot.note }}</p>
-                    <a v-if="spot.naverLink" :href="spot.naverLink" target="_blank" class="text-[10px] text-blue-500 hover:underline"><i class="fa-solid fa-link"></i> 開啟地圖</a>
+          <div id="backup-spots-list" class="space-y-3">
+            <div v-for="(spot, index) in backupSpots" :key="spot.id" class="bg-autumn-card rounded-2xl p-4 shadow-sm border border-autumn-border flex gap-3">
+              
+              <!-- 拖曳把手 -->
+              <div v-if="!spot.isEditing" class="flex flex-col pt-1 text-gray-200 cursor-grab backup-drag-handle hover:text-autumn-primary flex-shrink-0">
+                 <i class="fa-solid fa-grip-vertical"></i>
+              </div>
+
+              <div class="flex-1">
+                <template v-if="!spot.isEditing">
+                  <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                      <h4 class="font-bold text-sm text-autumn-text mb-1">{{ spot.name }}</h4>
+                      <p v-if="spot.note" class="text-xs text-autumn-muted mb-2">{{ spot.note }}</p>
+                      <a v-if="spot.naverLink" :href="spot.naverLink" target="_blank" class="text-[10px] text-blue-500 hover:underline"><i class="fa-solid fa-link"></i> 開啟地圖</a>
+                    </div>
+                    <div class="flex gap-3 text-gray-400">
+                      <button @click="startEditBackup(spot)" class="hover:text-autumn-primary"><i class="fa-solid fa-pen text-sm"></i></button>
+                      <button @click="backupSpots.splice(index, 1); saveData();" class="hover:text-red-400"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                    </div>
                   </div>
-                  <div class="flex gap-3 text-gray-400">
-                    <button @click="startEditBackup(spot)" class="hover:text-autumn-primary"><i class="fa-solid fa-pen text-sm"></i></button>
-                    <button @click="backupSpots.splice(index, 1)" class="hover:text-red-400"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                </template>
+                <template v-else>
+                  <div class="space-y-2">
+                    <input v-model="spot.editData.name" type="text" placeholder="景點名稱" class="w-full border border-autumn-border rounded px-2 py-1 text-sm outline-none">
+                    <input v-model="spot.editData.naverLink" type="text" placeholder="NAVER Map 網址" class="w-full border border-autumn-border rounded px-2 py-1 text-sm outline-none">
+                    <textarea v-model="spot.editData.note" placeholder="備註..." class="w-full border border-autumn-border rounded px-2 py-1 text-sm outline-none resize-none" rows="2"></textarea>
+                    <div class="flex justify-end gap-2 mt-2">
+                      <button @click="spot.isEditing = false" class="text-xs text-autumn-muted">取消</button>
+                      <button @click="saveBackup(spot)" class="text-xs bg-autumn-text text-white px-3 py-1 rounded">儲存</button>
+                    </div>
                   </div>
-                </div>
-              </template>
-              <template v-else>
-                <div class="space-y-2">
-                  <input v-model="spot.editData.name" type="text" placeholder="景點名稱" class="w-full border border-autumn-border rounded px-2 py-1 text-sm outline-none">
-                  <input v-model="spot.editData.naverLink" type="text" placeholder="NAVER Map 網址" class="w-full border border-autumn-border rounded px-2 py-1 text-sm outline-none">
-                  <textarea v-model="spot.editData.note" placeholder="備註..." class="w-full border border-autumn-border rounded px-2 py-1 text-sm outline-none resize-none" rows="2"></textarea>
-                  <div class="flex justify-end gap-2 mt-2">
-                    <button @click="spot.isEditing = false" class="text-xs text-autumn-muted">取消</button>
-                    <button @click="saveBackup(spot)" class="text-xs bg-autumn-text text-white px-3 py-1 rounded">儲存</button>
-                  </div>
-                </div>
-              </template>
+                </template>
+              </div>
             </div>
-            <button @click="addEmptyBackup" class="w-full py-3 rounded-xl border border-dashed border-autumn-secondary text-autumn-primary text-sm flex justify-center items-center gap-2">
-              <i class="fa-solid fa-plus"></i> 新增備用景點
-            </button>
           </div>
+          <button @click="addEmptyBackup" class="w-full py-3 rounded-xl border border-dashed border-autumn-secondary text-autumn-primary text-sm flex justify-center items-center gap-2">
+            <i class="fa-solid fa-plus"></i> 新增備用景點
+          </button>
         </div>
+
+        <!-- 其他資訊 -->
         <div class="space-y-3 pt-4 border-t border-autumn-border">
           <h3 class="font-bold text-sm text-autumn-primary flex items-center gap-2"><i class="fa-solid fa-circle-info"></i> 其他資訊 (如緊急醫療等)</h3>
           <div class="bg-autumn-card rounded-2xl overflow-hidden shadow-sm border border-autumn-border">
-            <div v-for="(info, index) in generalInfo" :key="info.id" class="p-3 border-b border-autumn-border flex justify-between items-center gap-2">
-              <template v-if="!info.isEditing">
-                <p class="text-sm flex-1">{{ info.text }}</p>
-                <button @click="startEditInfo(info)" class="text-gray-400 hover:text-autumn-primary text-xs"><i class="fa-solid fa-pen"></i></button>
-                <button @click="generalInfo.splice(index, 1)" class="text-gray-400 hover:text-red-400 text-xs"><i class="fa-solid fa-trash-can"></i></button>
-              </template>
-              <template v-else>
-                <input v-model="info.editText" type="text" class="flex-1 border-b border-autumn-primary outline-none text-sm bg-transparent">
-                <button @click="saveInfo(info)" class="text-green-600 font-bold text-xs">完成</button>
-              </template>
+            <div id="general-info-list">
+              <div v-for="(info, index) in generalInfo" :key="info.id" class="p-3 border-b border-autumn-border flex justify-between items-center gap-2">
+                
+                <template v-if="!info.isEditing">
+                  <div class="text-gray-200 cursor-grab info-drag-handle hover:text-autumn-primary px-1">
+                     <i class="fa-solid fa-grip-vertical"></i>
+                  </div>
+                  <p class="text-sm flex-1">{{ info.text }}</p>
+                  <button @click="startEditInfo(info)" class="text-gray-400 hover:text-autumn-primary text-xs"><i class="fa-solid fa-pen"></i></button>
+                  <button @click="generalInfo.splice(index, 1); saveData();" class="text-gray-400 hover:text-red-400 text-xs"><i class="fa-solid fa-trash-can"></i></button>
+                </template>
+                <template v-else>
+                  <input v-model="info.editText" type="text" class="flex-1 border-b border-autumn-primary outline-none text-sm bg-transparent ml-6">
+                  <button @click="saveInfo(info)" class="text-green-600 font-bold text-xs">完成</button>
+                </template>
+
+              </div>
             </div>
             <div class="p-2 bg-autumn-bg flex gap-2">
               <input v-model="newInfo" @keyup.enter="addInfo" type="text" placeholder="新增資訊..." class="flex-1 bg-white rounded-lg px-3 py-1.5 text-sm outline-none border border-autumn-border">
@@ -580,6 +622,14 @@
       </div>
 
     </main>
+
+    <!-- 圖片放大預覽 Modal -->
+    <div v-if="viewingImage" class="absolute inset-0 bg-black/80 z-[60] flex items-center justify-center p-4 backdrop-blur-sm" @click="viewingImage = null">
+      <img :src="viewingImage" class="max-w-full max-h-full object-contain rounded-xl shadow-2xl" @click.stop>
+      <button @click.stop="viewingImage = null" class="absolute top-6 right-6 w-10 h-10 bg-white/20 text-white rounded-full flex items-center justify-center hover:bg-white/40 backdrop-blur-md transition-colors shadow-lg">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+    </div>
 
     <!-- 底部導航 -->
     <nav class="w-full bg-autumn-card border-t border-autumn-border flex justify-between items-center pb-5 pt-2 px-1 z-30 shadow-[0_-10px_25px_rgba(0,0,0,0.03)] flex-shrink-0">
@@ -735,6 +785,8 @@
         const calcInputTwd = ref('');
         const calcInputKrw = ref('');
         
+        const viewingImage = ref(null);
+
         const STORAGE_KEY = 'seoul_trip_data_2026_v9';
 
         const dayAreas = {
@@ -784,25 +836,29 @@
         };
 
         const shoppingList = ref([]);
-        const newShoppingItem = ref({ name: '', store: '', image: '' });
+        const newShoppingItem = ref({ name: '', store: '', note: '', image: '' });
         
         const addShoppingItem = () => { 
            if(!newShoppingItem.value.name.trim() && !newShoppingItem.value.image) return alert('請填寫商品名稱或上傳圖片！');
            shoppingList.value.push({ 
+               id: Date.now() + Math.random(), 
                name: newShoppingItem.value.name.trim(), 
                store: newShoppingItem.value.store.trim(), 
+               note: newShoppingItem.value.note.trim(),
                image: newShoppingItem.value.image,
                bought: false, 
                isEditing: false, 
                editName: '', 
                editStore: '',
+               editNote: '',
                editImage: ''
            }); 
-           newShoppingItem.value = { name: '', store: '', image: '' }; 
+           newShoppingItem.value = { name: '', store: '', note: '', image: '' }; 
         };
         const startEditShopping = (item) => { 
            item.editName = item.name; 
            item.editStore = item.store || '';
+           item.editNote = item.note || '';
            item.editImage = item.image || '';
            item.isEditing = true; 
         };
@@ -810,8 +866,27 @@
            if(!item.editName.trim() && !item.editImage) return alert('商品名稱與圖片不能同時為空！');
            item.name = item.editName; 
            item.store = item.editStore;
+           item.note = item.editNote;
            item.image = item.editImage;
            item.isEditing = false; 
+        };
+
+        let shoppingSortableInst = null;
+        const initShoppingSortable = () => {
+          const el = document.getElementById('shopping-list-container');
+          if(el) {
+            if(shoppingSortableInst) shoppingSortableInst.destroy();
+            shoppingSortableInst = Sortable.create(el, { 
+                animation: 150, 
+                handle: '.shopping-drag-handle',
+                onEnd: (evt) => { 
+                    const arr = shoppingList.value; 
+                    const movedItem = arr.splice(evt.oldIndex, 1)[0]; 
+                    arr.splice(evt.newIndex, 0, movedItem); 
+                    saveData(); 
+                } 
+            });
+          }
         };
 
         const categories = ['景點', '購物', '早餐', '午餐', '晚餐', '其他'];
@@ -1007,12 +1082,6 @@
 
         watch([activeTab, currentDay, expenses], () => { if (activeTab.value === 'expenses' && currentDay.value === 'Total') { nextTick(() => renderChart()); } }, { deep: true });
 
-        watch(activeTab, (newVal) => { 
-          if(newVal === 'expenses' && currentDay.value === 'TODO') currentDay.value = 'Pre-trip';
-          if(newVal === 'itinerary' && (currentDay.value === 'Pre-trip' || currentDay.value === 'Total')) currentDay.value = 'Day 1';
-          if(newVal === 'itinerary' && currentDay.value !== 'TODO') nextTick(() => initSortable());
-        });
-
         const saveExpense = () => {
           if(!newExpense.value.item || !newExpense.value.amount) return;
           const day = currentDay.value;
@@ -1036,9 +1105,11 @@
         const startEditInfo = (info) => { info.editText = info.text; info.isEditing = true; };
         const saveInfo = (info) => { info.text = info.editText; info.isEditing = false; };
 
+        // 解決匯率 Cache 卡住問題，增加時戳強制更新
         const fetchRealTimeRate = async () => {
           try {
-            const res = await fetch('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/twd.json');
+            const cacheBuster = new Date().getTime();
+            const res = await fetch(`https://latest.currency-api.pages.dev/v1/currencies/twd.json?v=${cacheBuster}`);
             const data = await res.json();
             if(data && data.twd && data.twd.krw) {
               liveExchangeRate.value = data.twd.krw;
@@ -1051,6 +1122,44 @@
         const updateFromKrw = () => { if(!calcInputKrw.value) { calcInputTwd.value = ''; return; } calcInputTwd.value = (calcInputKrw.value / liveExchangeRate.value).toFixed(0); };
 
         const fetchWeather = async () => { try { const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=37.5665&longitude=126.9780&current_weather=true'); const data = await res.json(); currentWeather.value = Math.round(data.current_weather.temperature); } catch (e) {} };
+
+        // 初始化「資訊」分頁的拖曳功能
+        let backupSortableInst = null;
+        let infoSortableInst = null;
+        const initInfoSortables = () => {
+          const elBackup = document.getElementById('backup-spots-list');
+          if(elBackup) {
+            if(backupSortableInst) backupSortableInst.destroy();
+            backupSortableInst = Sortable.create(elBackup, { 
+                animation: 150, handle: '.backup-drag-handle',
+                onEnd: (evt) => { 
+                    const moved = backupSpots.value.splice(evt.oldIndex, 1)[0]; 
+                    backupSpots.value.splice(evt.newIndex, 0, moved); 
+                    saveData(); 
+                } 
+            });
+          }
+          const elInfo = document.getElementById('general-info-list');
+          if(elInfo) {
+            if(infoSortableInst) infoSortableInst.destroy();
+            infoSortableInst = Sortable.create(elInfo, { 
+                animation: 150, handle: '.info-drag-handle',
+                onEnd: (evt) => { 
+                    const moved = generalInfo.value.splice(evt.oldIndex, 1)[0]; 
+                    generalInfo.value.splice(evt.newIndex, 0, moved); 
+                    saveData(); 
+                } 
+            });
+          }
+        };
+
+        watch(activeTab, (newVal) => { 
+          if(newVal === 'expenses' && currentDay.value === 'TODO') currentDay.value = 'Pre-trip';
+          if(newVal === 'itinerary' && (currentDay.value === 'Pre-trip' || currentDay.value === 'Total')) currentDay.value = 'Day 1';
+          if(newVal === 'itinerary' && currentDay.value !== 'TODO') nextTick(() => initSortable());
+          if(newVal === 'shopping') nextTick(() => initShoppingSortable());
+          if(newVal === 'info') nextTick(() => initInfoSortables());
+        });
 
         let isInitialLoad = true;
         const saveData = () => {
@@ -1075,9 +1184,12 @@
               if(parsed.shoppingList) {
                   shoppingList.value = parsed.shoppingList.map(item => ({
                       ...item,
+                      id: item.id || Date.now() + Math.random(),
                       store: item.store || '',
+                      note: item.note || '',
                       image: item.image || '',
                       editStore: item.editStore || '',
+                      editNote: item.editNote || '',
                       editImage: item.editImage || ''
                   }));
               }
@@ -1087,7 +1199,6 @@
                     parsed.itinerary[day] = parsed.itinerary[day].map(e => {
                        let tp = e.timePeriod;
                        let t = e.time || '';
-                       
                        if (e.eventType === 'place' && !tp) {
                            if (t.includes('早上') || t.includes('上午') || (t >= '05:00' && t <= '11:59')) tp = '上午';
                            else if (t.includes('中午') || (t >= '12:00' && t <= '13:59')) tp = '中午';
@@ -1095,10 +1206,8 @@
                            else if (t.includes('傍晚') || (t >= '17:00' && t <= '18:59')) tp = '傍晚';
                            else if (t.includes('晚上') || (t >= '19:00')) tp = '晚上';
                            else tp = '全天';
-                           
                            if (t && !t.includes(':')) t = '';
                        }
-                       
                        return {
                            ...e,
                            eventType: e.eventType || 'place',
@@ -1125,14 +1234,22 @@
                  expenses.value = parsed.expenses;
                  if(!expenses.value['Pre-trip']) expenses.value['Pre-trip'] = [];
               }
-              if(parsed.backupSpots) backupSpots.value = parsed.backupSpots;
-              if(parsed.generalInfo) generalInfo.value = parsed.generalInfo;
+              if(parsed.backupSpots) {
+                 backupSpots.value = parsed.backupSpots.map(s => ({...s, id: s.id || Date.now() + Math.random()}));
+              }
+              if(parsed.generalInfo) {
+                 generalInfo.value = parsed.generalInfo.map(i => ({...i, id: i.id || Date.now() + Math.random()}));
+              }
             } catch (e) { console.error('資料讀取失敗', e); }
           }
           isInitialLoad = false;
           fetchWeather();
           fetchRealTimeRate();
-          nextTick(() => initSortable());
+          nextTick(() => {
+              initSortable();
+              if(activeTab.value === 'shopping') initShoppingSortable();
+              if(activeTab.value === 'info') initInfoSortables();
+          });
         });
 
         const exportData = () => {
@@ -1156,7 +1273,7 @@
         return {
           activeTab, tripDays, currentDay, currentWeather, dayAreas,
           todos, newTodo, addTodo, startEditTodo, saveTodo,
-          shoppingList, newShoppingItem, addShoppingItem, startEditShopping, saveShopping, handleImageUpload,
+          shoppingList, newShoppingItem, addShoppingItem, startEditShopping, saveShopping, handleImageUpload, viewingImage,
           categories, showAddModal, isEditingEvent, newEvent, currentDayEvents, openAddEventModal, openEditEventModal, saveEvent, deleteEvent,
           mapMainEvents, mapPocketEvents, addSubItem,
           expenseCategories, expenses, newExpense, currentDayExpensesList, currentDayExpense, getDayTotal, grandTotal, saveExpense, editingExpenseIdx, startEditExpense, cancelEditExpense, deleteExpense,
