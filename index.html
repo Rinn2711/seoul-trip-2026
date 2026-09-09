@@ -19,6 +19,9 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- 引入 LocalForage 突破儲存容量限制 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+  
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
 
@@ -85,22 +88,28 @@
       
       <!-- 行程 & TO-DO -->
       <div v-show="activeTab === 'itinerary'" class="space-y-4 pt-2">
+        
         <div v-if="currentDay === 'TODO'" class="space-y-4">
           <h2 class="text-xl font-serif mb-4 flex items-center gap-2"><i class="fa-solid fa-clipboard-check text-autumn-secondary"></i> 出發前待辦清單</h2>
           <div class="bg-autumn-card rounded-2xl p-4 shadow-sm border border-autumn-border flex gap-2">
             <input v-model="newTodo" @keyup.enter="addTodo" type="text" placeholder="新增待辦事項..." class="flex-1 outline-none bg-transparent text-sm">
             <button @click="addTodo" class="bg-autumn-primary text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-opacity-90"><i class="fa-solid fa-plus"></i></button>
           </div>
-          <div class="space-y-2 mt-4">
-            <div v-for="(todo, index) in todos" :key="index" class="bg-autumn-card rounded-2xl p-4 shadow-sm border border-autumn-border flex items-center gap-3">
+          
+          <div id="todo-list-container" class="space-y-2 mt-4">
+            <div v-for="(todo, index) in todos" :key="todo.id" class="bg-autumn-card rounded-2xl p-4 shadow-sm border border-autumn-border flex items-center gap-3">
               <template v-if="!todo.isEditing">
-                <input type="checkbox" v-model="todo.done" class="w-5 h-5 accent-autumn-primary rounded cursor-pointer">
-                <span class="text-sm flex-1" :class="{'line-through text-autumn-muted': todo.done}">{{ todo.text }}</span>
+                <div class="flex flex-col text-gray-200 cursor-grab todo-drag-handle hover:text-autumn-primary flex-shrink-0">
+                  <i class="fa-solid fa-grip-vertical"></i>
+                </div>
+                
+                <input type="checkbox" v-model="todo.done" @change="saveData" class="w-5 h-5 accent-autumn-primary rounded cursor-pointer">
+                <span class="text-sm flex-1 break-words" :class="{'line-through text-autumn-muted': todo.done}">{{ todo.text }}</span>
                 <button @click="startEditTodo(todo)" class="text-gray-400 hover:text-autumn-primary"><i class="fa-solid fa-pen text-sm"></i></button>
-                <button @click="todos.splice(index, 1)" class="text-gray-400 hover:text-red-400"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                <button @click="todos.splice(index, 1); saveData();" class="text-gray-400 hover:text-red-400"><i class="fa-solid fa-trash-can text-sm"></i></button>
               </template>
               <template v-else>
-                <input v-model="todo.editText" type="text" class="flex-1 border-b border-autumn-primary outline-none bg-transparent text-sm py-1">
+                <input v-model="todo.editText" type="text" class="flex-1 border-b border-autumn-primary outline-none bg-transparent text-sm py-1 ml-6">
                 <button @click="saveTodo(todo)" class="text-green-600 font-bold text-sm"><i class="fa-solid fa-check"></i> 完成</button>
               </template>
             </div>
@@ -109,13 +118,11 @@
         </div>
 
         <div v-else>
-          <!-- 每日區域標示 -->
           <div class="bg-autumn-card border border-autumn-border rounded-xl p-3 mb-4 shadow-sm text-center">
             <p class="text-[10px] text-autumn-muted mb-0.5 tracking-wider">今日探索區域</p>
             <h3 class="font-bold text-autumn-primary text-sm"><i class="fa-solid fa-location-dot mr-1"></i>{{ dayAreas[currentDay] }}</h3>
           </div>
 
-          <!-- Day 1 去程航班卡片 -->
           <div v-if="currentDay === 'Day 1'" class="bg-white border-[2px] border-dashed border-autumn-secondary rounded-[1.5rem] p-5 mb-5 shadow-sm relative">
             <div class="flex justify-between items-center mb-4">
               <span class="bg-yellow-100 text-yellow-700 text-xs font-bold px-3 py-1 rounded-full">出發</span>
@@ -140,7 +147,6 @@
             </div>
           </div>
 
-          <!-- Day 7 回程航班卡片 -->
           <div v-if="currentDay === 'Day 7'" class="bg-white border-[2px] border-dashed border-autumn-secondary rounded-[1.5rem] p-5 mb-5 shadow-sm relative">
             <div class="flex justify-between items-center mb-4">
               <span class="bg-autumn-primary/10 text-autumn-primary text-xs font-bold px-3 py-1 rounded-full">回程</span>
@@ -170,11 +176,9 @@
             <p class="text-sm">尚未安排行程</p>
           </div>
           
-          <!-- 行程列表 -->
           <div id="itinerary-list" class="space-y-4">
             <div v-for="(event, index) in currentDayEvents" :key="event.id" :data-id="event.id" class="group cursor-grab">
               
-              <!-- 交通移動卡片 -->
               <div v-if="event.eventType === 'transport'" class="bg-autumn-bg rounded-2xl p-4 shadow-[inset_0_0_15px_rgba(255,255,255,0.6)] border border-dashed border-autumn-secondary flex gap-4 items-stretch relative">
                 <div class="flex flex-col items-center justify-center text-gray-300"><i class="fa-solid fa-grip-vertical"></i></div>
                 <div class="flex flex-col items-center min-w-[3.5rem]">
@@ -196,7 +200,6 @@
                 </div>
               </div>
 
-              <!-- 一般景點行程卡片 -->
               <div v-else class="bg-autumn-card rounded-2xl p-4 shadow-sm border border-autumn-border flex gap-4 items-stretch relative">
                 <div class="flex flex-col items-center justify-center text-gray-200"><i class="fa-solid fa-grip-vertical"></i></div>
                 <div class="flex flex-col items-center min-w-[3.5rem]">
@@ -216,7 +219,6 @@
                   </ul>
                   <a v-if="event.naverLink" :href="event.naverLink" target="_blank" class="text-[10px] text-blue-500 hover:underline inline-block mb-1"><i class="fa-solid fa-link"></i> NAVER Map</a>
                   
-                  <!-- 口袋清單 (小店/備選) 收合設計 -->
                   <div v-if="event.subItems && event.subItems.length" class="mt-3 pt-3 border-t border-dashed border-gray-200">
                     <div @click="event.isSubItemsOpen = !event.isSubItemsOpen" class="flex justify-between items-center cursor-pointer pb-1 group">
                       <p class="text-[10px] font-bold text-autumn-primary group-hover:opacity-80 transition flex items-center gap-1.5">
@@ -237,7 +239,6 @@
                                 <i class="fa-solid fa-check text-[6px] mt-1 opacity-50 text-autumn-secondary"></i> <span class="leading-relaxed">{{ line }}</span>
                               </li>
                             </ul>
-
                             <a v-if="sub.naverLink" :href="sub.naverLink" target="_blank" class="text-[9px] text-blue-500 hover:underline inline-block mt-1"><i class="fa-solid fa-link"></i> NAVER Map</a>
                          </div>
                       </div>
@@ -250,7 +251,6 @@
                   <button @click="deleteEvent(index)" class="text-gray-300 hover:text-red-400 p-1"><i class="fa-solid fa-trash-can text-sm"></i></button>
                 </div>
               </div>
-
             </div>
           </div>
           <button @click="openAddEventModal" class="w-full mt-6 py-4 rounded-2xl border border-dashed border-autumn-secondary text-autumn-primary font-medium flex items-center justify-center gap-2 hover:bg-autumn-secondary hover:bg-opacity-10 transition-colors">
@@ -264,7 +264,6 @@
         
         <div class="bg-white p-4 rounded-2xl shadow-sm border border-autumn-border">
           <h3 class="font-bold text-sm text-autumn-text mb-3 flex items-center gap-2"><i class="fa-solid fa-map"></i> 首爾地鐵圖 (中韓對照)</h3>
-          
           <div class="rounded-xl overflow-hidden border border-gray-200 relative bg-[#EBEBEB] flex justify-center items-center h-48">
              <a href="./subway_seoul_cn_kr.jpg" target="_blank" class="block w-full h-full">
                <img src="./subway_seoul_cn_kr.jpg" alt="Seoul Subway Map" class="w-full h-full object-contain hover:scale-105 transition-transform duration-500">
@@ -331,6 +330,7 @@
 
       <!-- 記帳板塊 -->
       <div v-show="activeTab === 'expenses'" class="pt-2 space-y-6">
+        
         <div v-show="currentDay === 'Total'">
           <div class="bg-autumn-card rounded-2xl p-5 shadow-sm border border-autumn-border relative mb-6">
             <p class="text-xs text-autumn-muted mb-1">整趟旅程總花費</p>
@@ -386,15 +386,22 @@
             </div>
           </div>
 
-          <div class="space-y-3">
-            <div v-for="(exp, idx) in currentDayExpensesList" :key="idx" class="bg-autumn-card p-4 rounded-xl shadow-sm border border-autumn-border flex justify-between items-center">
-              <div>
-                <div class="flex items-center gap-2 mb-0.5">
-                  <span class="text-[9px] bg-autumn-bg text-autumn-primary px-2 py-0.5 rounded font-bold">{{ exp.category }}</span>
-                  <p class="font-medium text-sm text-autumn-text">{{ exp.item }}</p>
+          <div id="expenses-list-container" class="space-y-3">
+            <div v-for="(exp, idx) in currentDayExpensesList" :key="exp.id" class="bg-autumn-card p-4 rounded-xl shadow-sm border border-autumn-border flex justify-between items-center group">
+              <div class="flex items-center gap-3">
+                <div class="text-gray-200 cursor-grab exp-drag-handle hover:text-autumn-primary flex-shrink-0">
+                  <i class="fa-solid fa-grip-vertical"></i>
                 </div>
-                <p class="text-[10px] text-autumn-muted">{{ exp.currency }} {{ exp.originalAmount.toLocaleString() }}</p>
+                
+                <div>
+                  <div class="flex items-center gap-2 mb-0.5">
+                    <span class="text-[9px] bg-autumn-bg text-autumn-primary px-2 py-0.5 rounded font-bold">{{ exp.category }}</span>
+                    <p class="font-medium text-sm text-autumn-text">{{ exp.item }}</p>
+                  </div>
+                  <p class="text-[10px] text-autumn-muted">{{ exp.currency }} {{ exp.originalAmount.toLocaleString() }}</p>
+                </div>
               </div>
+              
               <div class="text-right flex items-center gap-3">
                 <div>
                   <p class="font-bold text-sm">₩ {{ exp.krw.toLocaleString() }}</p>
@@ -406,7 +413,7 @@
                 </div>
               </div>
             </div>
-            <div v-if="!currentDayExpensesList.length" class="text-center text-sm text-autumn-muted py-4">目前尚無花費紀錄</div>
+            <div v-if="!currentDayExpensesList.length" class="text-center text-sm text-autumn-muted py-4 border border-dashed border-gray-300 rounded-2xl bg-gray-50/50">目前尚無花費紀錄</div>
           </div>
         </div>
       </div>
@@ -477,7 +484,6 @@
           <div v-for="(item, index) in shoppingList" :key="item.id" class="bg-autumn-card rounded-2xl p-4 shadow-sm border border-autumn-border flex gap-3 group relative">
             
             <template v-if="!item.isEditing">
-              <!-- 新增拖曳把手 -->
               <div class="flex flex-col pt-1 text-gray-200 cursor-grab shopping-drag-handle hover:text-autumn-primary flex-shrink-0">
                 <i class="fa-solid fa-grip-vertical"></i>
               </div>
@@ -485,17 +491,12 @@
               <input type="checkbox" v-model="item.bought" @change="saveData" class="mt-1 accent-autumn-primary rounded w-5 h-5 cursor-pointer flex-shrink-0">
               <div class="flex-1 overflow-hidden">
                 <p class="text-sm font-bold text-autumn-text break-words" :class="{'line-through text-autumn-muted': item.bought}">{{ item.name || '(未命名的商品照片)' }}</p>
-                
                 <p v-if="item.store" class="text-[10px] text-autumn-primary mt-1 font-medium bg-autumn-bg inline-block px-2 py-0.5 rounded" :class="{'opacity-50': item.bought}">
                   <i class="fa-solid fa-store mr-1"></i>{{ item.store }}
                 </p>
-                
-                <!-- 新增備註顯示 -->
                 <p v-if="item.note" class="text-[11px] text-autumn-text mt-1.5 bg-gray-50 p-1.5 rounded-lg border border-gray-100" :class="{'opacity-50': item.bought}">
                   <i class="fa-regular fa-comment-dots mr-1 opacity-70"></i>{{ item.note }}
                 </p>
-
-                <!-- 照片放大預覽 -->
                 <div v-if="item.image" class="mt-2 relative inline-block">
                   <img :src="item.image" @click="viewingImage = item.image" class="h-24 w-24 object-cover rounded-xl border border-gray-200 shadow-sm cursor-pointer hover:opacity-80 transition" :class="{'opacity-50': item.bought}">
                   <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 hover:opacity-100 transition-opacity">
@@ -513,7 +514,6 @@
               <div class="flex-1 space-y-2 ml-4">
                 <input v-model="item.editName" type="text" placeholder="商品名稱" class="w-full border-b border-autumn-primary outline-none bg-transparent text-sm py-1 font-bold text-autumn-text">
                 <input v-model="item.editStore" type="text" placeholder="在哪裡買？" class="w-full border-b border-autumn-border outline-none bg-transparent text-xs py-1 text-autumn-muted">
-                <!-- 編輯備註 -->
                 <input v-model="item.editNote" type="text" placeholder="備註 (色號、數量、尺寸...)" class="w-full border-b border-autumn-border outline-none bg-transparent text-xs py-1 text-autumn-text">
                 
                 <div class="flex gap-3 items-end pt-2">
@@ -547,13 +547,10 @@
         
         <h2 class="text-2xl font-serif text-autumn-text mb-2">實用資訊整理</h2>
         
-        <!-- 備用參考景點 -->
         <div class="space-y-3">
           <h3 class="font-bold text-sm text-autumn-primary flex items-center gap-2"><i class="fa-solid fa-map-pin"></i> 備用參考景點</h3>
           <div id="backup-spots-list" class="space-y-3">
             <div v-for="(spot, index) in backupSpots" :key="spot.id" class="bg-autumn-card rounded-2xl p-4 shadow-sm border border-autumn-border flex gap-3">
-              
-              <!-- 拖曳把手 -->
               <div v-if="!spot.isEditing" class="flex flex-col pt-1 text-gray-200 cursor-grab backup-drag-handle hover:text-autumn-primary flex-shrink-0">
                  <i class="fa-solid fa-grip-vertical"></i>
               </div>
@@ -591,13 +588,11 @@
           </button>
         </div>
 
-        <!-- 其他資訊 -->
         <div class="space-y-3 pt-4 border-t border-autumn-border">
           <h3 class="font-bold text-sm text-autumn-primary flex items-center gap-2"><i class="fa-solid fa-circle-info"></i> 其他資訊 (如緊急醫療等)</h3>
           <div class="bg-autumn-card rounded-2xl overflow-hidden shadow-sm border border-autumn-border">
             <div id="general-info-list">
               <div v-for="(info, index) in generalInfo" :key="info.id" class="p-3 border-b border-autumn-border flex justify-between items-center gap-2">
-                
                 <template v-if="!info.isEditing">
                   <div class="text-gray-200 cursor-grab info-drag-handle hover:text-autumn-primary px-1">
                      <i class="fa-solid fa-grip-vertical"></i>
@@ -610,7 +605,6 @@
                   <input v-model="info.editText" type="text" class="flex-1 border-b border-autumn-primary outline-none text-sm bg-transparent ml-6">
                   <button @click="saveInfo(info)" class="text-green-600 font-bold text-xs">完成</button>
                 </template>
-
               </div>
             </div>
             <div class="p-2 bg-autumn-bg flex gap-2">
@@ -659,12 +653,10 @@
     <div v-if="showAddModal" class="absolute inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
       <div class="bg-autumn-card w-full max-w-sm rounded-3xl shadow-2xl border border-autumn-border max-h-[85vh] flex flex-col overflow-hidden">
         
-        <!-- 固定標題列 -->
         <div class="p-5 pb-3 border-b border-autumn-border flex-shrink-0 bg-autumn-card">
           <h3 class="font-serif text-xl text-autumn-text">{{ isEditingEvent ? '編輯' : '新增' }} {{ currentDay }} 行程</h3>
         </div>
         
-        <!-- 可滾動的內容填寫區 -->
         <div class="flex-1 overflow-y-auto p-5 space-y-4 hide-scrollbar">
           
           <div class="flex bg-autumn-bg p-1 rounded-xl mb-4">
@@ -672,7 +664,6 @@
             <button @click="newEvent.eventType = 'transport'" class="flex-1 py-2 text-sm font-medium rounded-lg transition-all" :class="newEvent.eventType === 'transport' ? 'bg-white shadow-sm text-autumn-primary border border-gray-100' : 'text-autumn-muted'">🚇 交通移動</button>
           </div>
 
-          <!-- 模式一：景點 / 餐廳 -->
           <div v-show="newEvent.eventType === 'place'" class="space-y-4">
             <div class="flex gap-3">
               <div class="w-1/2">
@@ -714,7 +705,6 @@
               <input type="text" v-model="newEvent.naverLink" placeholder="貼上分享網址 (選填)" class="w-full bg-autumn-bg rounded-xl px-3 py-2.5 outline-none border border-autumn-border text-sm">
             </div>
 
-            <!-- 口袋清單區塊 -->
             <div class="mt-4 pt-4 border-t border-autumn-border">
               <label class="text-xs text-autumn-muted mb-3 flex justify-between items-center">
                  <span>探索口袋清單 (附屬小店)</span>
@@ -741,7 +731,6 @@
            </div>
           </div>
 
-          <!-- 模式二：交通移動 -->
           <div v-show="newEvent.eventType === 'transport'" class="space-y-4">
             <div>
               <label class="text-xs text-autumn-muted mb-1 block">預計車程 (選填)</label>
@@ -759,7 +748,6 @@
 
         </div>
 
-        <!-- 永遠固定在底部的按鈕列 (Sticky Footer) -->
         <div class="p-4 border-t border-autumn-border flex gap-3 flex-shrink-0 bg-autumn-card shadow-[0_-5px_15px_rgba(0,0,0,0.03)] z-10">
           <button @click="showAddModal = false" class="flex-1 py-3 rounded-xl bg-autumn-bg text-autumn-text font-medium border border-autumn-border text-sm hover:bg-opacity-80 transition">取消</button>
           <button @click="saveEvent" class="flex-1 py-3 rounded-xl bg-autumn-text text-white font-medium shadow-md text-sm hover:bg-opacity-90 transition">儲存</button>
@@ -787,7 +775,8 @@
         
         const viewingImage = ref(null);
 
-        const STORAGE_KEY = 'seoul_trip_data_2026_v9';
+        // 更新儲存版本號，觸發資料庫升級
+        const STORAGE_KEY = 'seoul_trip_data_2026_v10';
 
         const dayAreas = {
           'Day 1': '明洞',
@@ -803,7 +792,12 @@
 
         const todos = ref([]);
         const newTodo = ref('');
-        const addTodo = () => { if(newTodo.value.trim()) { todos.value.push({ text: newTodo.value.trim(), done: false, isEditing: false, editText: '' }); newTodo.value = ''; } };
+        const addTodo = () => { 
+            if(newTodo.value.trim()) { 
+                todos.value.push({ id: Date.now() + Math.random(), text: newTodo.value.trim(), done: false, isEditing: false, editText: '' }); 
+                newTodo.value = ''; 
+            } 
+        };
         const startEditTodo = (todo) => { todo.editText = todo.text; todo.isEditing = true; };
         const saveTodo = (todo) => { todo.text = todo.editText; todo.isEditing = false; };
 
@@ -814,7 +808,9 @@
                 const img = new Image();
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    const max_size = 500;
+                    
+                    // 【畫質升級設定】從 500 升級到 1080 像素
+                    const max_size = 1080; 
                     let width = img.width;
                     let height = img.height;
                     if (width > height && width > max_size) {
@@ -828,7 +824,9 @@
                     canvas.height = height;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
-                    callback(canvas.toDataURL('image/jpeg', 0.6)); 
+                    
+                    // 【畫質升級設定】降低壓縮率，確保圖片清晰度 (0.6 -> 0.85)
+                    callback(canvas.toDataURL('image/jpeg', 0.85)); 
                 };
                 img.src = e.target.result;
             };
@@ -871,19 +869,115 @@
            item.isEditing = false; 
         };
 
+        let todoSortableInst = null;
         let shoppingSortableInst = null;
+        let sortableInst = null;
+        let expSortableInst = null;
+        let backupSortableInst = null;
+        let infoSortableInst = null;
+        let subSortableInst = null;
+
+        const initTodoSortable = () => {
+          const el = document.getElementById('todo-list-container');
+          if(el) {
+            if(todoSortableInst) todoSortableInst.destroy();
+            todoSortableInst = Sortable.create(el, { 
+                animation: 150, handle: '.todo-drag-handle',
+                onEnd: (evt) => { 
+                    const moved = todos.value.splice(evt.oldIndex, 1)[0]; 
+                    todos.value.splice(evt.newIndex, 0, moved); 
+                    saveData(); 
+                } 
+            });
+          }
+        };
+
         const initShoppingSortable = () => {
           const el = document.getElementById('shopping-list-container');
           if(el) {
             if(shoppingSortableInst) shoppingSortableInst.destroy();
             shoppingSortableInst = Sortable.create(el, { 
-                animation: 150, 
-                handle: '.shopping-drag-handle',
+                animation: 150, handle: '.shopping-drag-handle',
                 onEnd: (evt) => { 
-                    const arr = shoppingList.value; 
+                    const moved = shoppingList.value.splice(evt.oldIndex, 1)[0]; 
+                    shoppingList.value.splice(evt.newIndex, 0, moved); 
+                    saveData(); 
+                } 
+            });
+          }
+        };
+
+        const initSortable = () => {
+          const el = document.getElementById('itinerary-list');
+          if(el) {
+            if(sortableInst) sortableInst.destroy();
+            sortableInst = Sortable.create(el, { 
+                animation: 150, handle: '.fa-grip-vertical', 
+                onEnd: (evt) => { 
+                    const arr = itinerary.value[currentDay.value]; 
+                    const moved = arr.splice(evt.oldIndex, 1)[0]; 
+                    arr.splice(evt.newIndex, 0, moved); 
+                    saveData(); 
+                } 
+            });
+          }
+        };
+
+        const initExpSortable = () => {
+          const el = document.getElementById('expenses-list-container');
+          if(el) {
+            if(expSortableInst) expSortableInst.destroy();
+            expSortableInst = Sortable.create(el, { 
+                animation: 150, handle: '.exp-drag-handle',
+                onEnd: (evt) => { 
+                    const day = currentDay.value === 'TODO' ? 'Pre-trip' : currentDay.value;
+                    if(expenses.value[day]) {
+                        const moved = expenses.value[day].splice(evt.oldIndex, 1)[0]; 
+                        expenses.value[day].splice(evt.newIndex, 0, moved); 
+                        saveData(); 
+                    }
+                } 
+            });
+          }
+        };
+
+        const initInfoSortables = () => {
+          const elBackup = document.getElementById('backup-spots-list');
+          if(elBackup) {
+            if(backupSortableInst) backupSortableInst.destroy();
+            backupSortableInst = Sortable.create(elBackup, { 
+                animation: 150, handle: '.backup-drag-handle',
+                onEnd: (evt) => { 
+                    const moved = backupSpots.value.splice(evt.oldIndex, 1)[0]; 
+                    backupSpots.value.splice(evt.newIndex, 0, moved); 
+                    saveData(); 
+                } 
+            });
+          }
+          const elInfo = document.getElementById('general-info-list');
+          if(elInfo) {
+            if(infoSortableInst) infoSortableInst.destroy();
+            infoSortableInst = Sortable.create(elInfo, { 
+                animation: 150, handle: '.info-drag-handle',
+                onEnd: (evt) => { 
+                    const moved = generalInfo.value.splice(evt.oldIndex, 1)[0]; 
+                    generalInfo.value.splice(evt.newIndex, 0, moved); 
+                    saveData(); 
+                } 
+            });
+          }
+        };
+
+        const initSubSortable = () => {
+          const el = document.getElementById('modal-sub-list');
+          if(el) {
+            if(subSortableInst) subSortableInst.destroy();
+            subSortableInst = Sortable.create(el, { 
+                animation: 150, handle: '.modal-sub-drag-handle', ghostClass: 'sub-sortable-ghost',
+                onEnd: (evt) => { 
+                    const arr = newEvent.value.subItems; 
                     const movedItem = arr.splice(evt.oldIndex, 1)[0]; 
                     arr.splice(evt.newIndex, 0, movedItem); 
-                    saveData(); 
                 } 
             });
           }
@@ -920,24 +1014,6 @@
           return itinerary.value[currentDay.value] || [];
         });
         
-        let subSortableInst = null;
-        const initSubSortable = () => {
-          const el = document.getElementById('modal-sub-list');
-          if(el) {
-            if(subSortableInst) subSortableInst.destroy();
-            subSortableInst = Sortable.create(el, { 
-                animation: 150, 
-                handle: '.modal-sub-drag-handle',
-                ghostClass: 'sub-sortable-ghost',
-                onEnd: (evt) => { 
-                    const arr = newEvent.value.subItems; 
-                    const movedItem = arr.splice(evt.oldIndex, 1)[0]; 
-                    arr.splice(evt.newIndex, 0, movedItem); 
-                } 
-            });
-          }
-        };
-
         const openAddEventModal = () => { 
            isEditingEvent.value = false; 
            newEvent.value = getEmptyEvent(); 
@@ -975,15 +1051,6 @@
         };
         const deleteEvent = (index) => { itinerary.value[currentDay.value].splice(index, 1); saveData(); };
 
-        let sortableInst = null;
-        const initSortable = () => {
-          const el = document.getElementById('itinerary-list');
-          if(el) {
-            if(sortableInst) sortableInst.destroy();
-            sortableInst = Sortable.create(el, { animation: 150, handle: '.fa-grip-vertical', onEnd: (evt) => { const arr = itinerary.value[currentDay.value]; const movedItem = arr.splice(evt.oldIndex, 1)[0]; arr.splice(evt.newIndex, 0, movedItem); saveData(); } });
-          }
-        };
-
         const mapMainEvents = computed(() => {
            let dayToLoad = currentDay.value;
            if (['TODO', 'Pre-trip', 'Total'].includes(dayToLoad)) dayToLoad = 'Day 1';
@@ -1008,7 +1075,7 @@
         const editingExpenseIdx = ref(null);
         
         const currentDayExpensesList = computed(() => {
-          const day = currentDay.value === 'TODO' ? 'Day 1' : currentDay.value;
+          const day = currentDay.value === 'TODO' ? 'Pre-trip' : currentDay.value;
           const rate = liveExchangeRate.value;
           return (expenses.value[day] || []).map(exp => ({ 
             ...exp, 
@@ -1080,32 +1147,33 @@
           }
         };
 
-        watch([activeTab, currentDay, expenses], () => { if (activeTab.value === 'expenses' && currentDay.value === 'Total') { nextTick(() => renderChart()); } }, { deep: true });
-
         const saveExpense = () => {
           if(!newExpense.value.item || !newExpense.value.amount) return;
           const day = currentDay.value;
           if(!expenses.value[day]) expenses.value[day] = [];
-          if (editingExpenseIdx.value !== null) { expenses.value[day][editingExpenseIdx.value] = { ...newExpense.value }; editingExpenseIdx.value = null; } 
-          else { expenses.value[day].push({ ...newExpense.value }); }
+          if (editingExpenseIdx.value !== null) { 
+              expenses.value[day][editingExpenseIdx.value] = { ...newExpense.value, id: expenses.value[day][editingExpenseIdx.value].id || Date.now() + Math.random() }; 
+              editingExpenseIdx.value = null; 
+          } else { 
+              expenses.value[day].push({ ...newExpense.value, id: Date.now() + Math.random() }); 
+          }
           newExpense.value = { item: '', amount: '', currency: 'KRW', category: '食物' };
         };
         const startEditExpense = (idx, exp) => { editingExpenseIdx.value = idx; newExpense.value = { item: exp.item, amount: exp.originalAmount, currency: exp.currency, category: exp.category || '其他' }; };
         const cancelEditExpense = () => { editingExpenseIdx.value = null; newExpense.value = { item: '', amount: '', currency: 'KRW', category: '食物' }; };
-        const deleteExpense = (idx) => { expenses.value[currentDay.value].splice(idx, 1); if(editingExpenseIdx.value === idx) cancelEditExpense(); };
+        const deleteExpense = (idx) => { expenses.value[currentDay.value].splice(idx, 1); if(editingExpenseIdx.value === idx) cancelEditExpense(); saveData(); };
 
         const backupSpots = ref([]);
-        const addEmptyBackup = () => backupSpots.value.push({ id: Date.now(), name: '', naverLink: '', note: '', isEditing: true, editData: { name: '', naverLink: '', note: '' } });
+        const addEmptyBackup = () => backupSpots.value.push({ id: Date.now() + Math.random(), name: '', naverLink: '', note: '', isEditing: true, editData: { name: '', naverLink: '', note: '' } });
         const startEditBackup = (spot) => { spot.editData = { name: spot.name, naverLink: spot.naverLink, note: spot.note }; spot.isEditing = true; };
         const saveBackup = (spot) => { if(!spot.editData.name) return alert('請填寫景點名稱'); spot.name = spot.editData.name; spot.naverLink = spot.editData.naverLink; spot.note = spot.editData.note; spot.isEditing = false; };
 
         const generalInfo = ref([]);
         const newInfo = ref('');
-        const addInfo = () => { if(newInfo.value.trim()) { generalInfo.value.push({ id: Date.now(), text: newInfo.value.trim(), isEditing: false, editText: '' }); newInfo.value = ''; } };
+        const addInfo = () => { if(newInfo.value.trim()) { generalInfo.value.push({ id: Date.now() + Math.random(), text: newInfo.value.trim(), isEditing: false, editText: '' }); newInfo.value = ''; } };
         const startEditInfo = (info) => { info.editText = info.text; info.isEditing = true; };
         const saveInfo = (info) => { info.text = info.editText; info.isEditing = false; };
 
-        // 解決匯率 Cache 卡住問題，增加時戳強制更新
         const fetchRealTimeRate = async () => {
           try {
             const cacheBuster = new Date().getTime();
@@ -1123,43 +1191,22 @@
 
         const fetchWeather = async () => { try { const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=37.5665&longitude=126.9780&current_weather=true'); const data = await res.json(); currentWeather.value = Math.round(data.current_weather.temperature); } catch (e) {} };
 
-        // 初始化「資訊」分頁的拖曳功能
-        let backupSortableInst = null;
-        let infoSortableInst = null;
-        const initInfoSortables = () => {
-          const elBackup = document.getElementById('backup-spots-list');
-          if(elBackup) {
-            if(backupSortableInst) backupSortableInst.destroy();
-            backupSortableInst = Sortable.create(elBackup, { 
-                animation: 150, handle: '.backup-drag-handle',
-                onEnd: (evt) => { 
-                    const moved = backupSpots.value.splice(evt.oldIndex, 1)[0]; 
-                    backupSpots.value.splice(evt.newIndex, 0, moved); 
-                    saveData(); 
-                } 
-            });
-          }
-          const elInfo = document.getElementById('general-info-list');
-          if(elInfo) {
-            if(infoSortableInst) infoSortableInst.destroy();
-            infoSortableInst = Sortable.create(elInfo, { 
-                animation: 150, handle: '.info-drag-handle',
-                onEnd: (evt) => { 
-                    const moved = generalInfo.value.splice(evt.oldIndex, 1)[0]; 
-                    generalInfo.value.splice(evt.newIndex, 0, moved); 
-                    saveData(); 
-                } 
-            });
-          }
-        };
-
-        watch(activeTab, (newVal) => { 
-          if(newVal === 'expenses' && currentDay.value === 'TODO') currentDay.value = 'Pre-trip';
-          if(newVal === 'itinerary' && (currentDay.value === 'Pre-trip' || currentDay.value === 'Total')) currentDay.value = 'Day 1';
-          if(newVal === 'itinerary' && currentDay.value !== 'TODO') nextTick(() => initSortable());
-          if(newVal === 'shopping') nextTick(() => initShoppingSortable());
-          if(newVal === 'info') nextTick(() => initInfoSortables());
+        watch([activeTab, currentDay], ([newTab, newDay]) => { 
+          if(newTab === 'expenses' && newDay === 'TODO') { currentDay.value = 'Pre-trip'; return; }
+          if(newTab === 'itinerary' && (newDay === 'Pre-trip' || newDay === 'Total')) { currentDay.value = 'Day 1'; return; }
+          
+          nextTick(() => {
+            if(newTab === 'itinerary' && newDay !== 'TODO') initSortable();
+            if(newTab === 'itinerary' && newDay === 'TODO') initTodoSortable();
+            if(newTab === 'shopping') initShoppingSortable();
+            if(newTab === 'info') initInfoSortables();
+            if(newTab === 'expenses' && newDay !== 'Total') initExpSortable();
+          });
         });
+
+        watch([activeTab, currentDay, expenses], () => { 
+            if (activeTab.value === 'expenses' && currentDay.value === 'Total') { nextTick(() => renderChart()); } 
+        }, { deep: true });
 
         let isInitialLoad = true;
         const saveData = () => {
@@ -1168,18 +1215,34 @@
             todos: todos.value, shoppingList: shoppingList.value, itinerary: itinerary.value,
             expenses: expenses.value, backupSpots: backupSpots.value, generalInfo: generalInfo.value
           };
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+          // 寫入 IndexedDB 深層資料庫 (取代原本的 localStorage)
+          localforage.setItem(STORAGE_KEY, JSON.stringify(dataToSave)).catch(err => console.error('存檔失敗', err));
         };
 
         watch([todos, shoppingList, itinerary, expenses, backupSpots, generalInfo], () => { saveData(); }, { deep: true });
 
-        onMounted(() => {
-          let savedData = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('seoul_trip_data_2026_v8') || localStorage.getItem('seoul_trip_data_2026_v7') || localStorage.getItem('seoul_trip_data_2026_v6') || localStorage.getItem('seoul_trip_data_2026_v5');
+        // 初始化與無痛資料轉移機制
+        onMounted(async () => {
+          localforage.config({ name: 'SeoulTrip2026' });
+          let savedData = await localforage.getItem(STORAGE_KEY);
+
+          // 如果新資料庫沒有資料，嘗試從舊版 LocalStorage 撈取，進行搬移
+          if (!savedData) {
+            savedData = localStorage.getItem('seoul_trip_data_2026_v9') || 
+                        localStorage.getItem('seoul_trip_data_2026_v8') || 
+                        localStorage.getItem('seoul_trip_data_2026_v7') || 
+                        localStorage.getItem('seoul_trip_data_2026_v6');
+            if (savedData) {
+                await localforage.setItem(STORAGE_KEY, savedData);
+            }
+          }
 
           if (savedData) {
             try {
               const parsed = JSON.parse(savedData);
-              if(parsed.todos) todos.value = parsed.todos;
+              if(parsed.todos) {
+                 todos.value = parsed.todos.map(t => ({...t, id: t.id || Date.now() + Math.random()}));
+              }
               
               if(parsed.shoppingList) {
                   shoppingList.value = parsed.shoppingList.map(item => ({
@@ -1230,7 +1293,13 @@
               }
               
               if(parsed.expenses) {
-                 Object.keys(parsed.expenses).forEach(day => { parsed.expenses[day] = parsed.expenses[day].map(e => ({...e, category: e.category || '其他'})); });
+                 Object.keys(parsed.expenses).forEach(day => { 
+                     parsed.expenses[day] = parsed.expenses[day].map(e => ({
+                         ...e, 
+                         category: e.category || '其他',
+                         id: e.id || Date.now() + Math.random()
+                     })); 
+                 });
                  expenses.value = parsed.expenses;
                  if(!expenses.value['Pre-trip']) expenses.value['Pre-trip'] = [];
               }
@@ -1245,10 +1314,13 @@
           isInitialLoad = false;
           fetchWeather();
           fetchRealTimeRate();
+          
           nextTick(() => {
-              initSortable();
-              if(activeTab.value === 'shopping') initShoppingSortable();
-              if(activeTab.value === 'info') initInfoSortables();
+            if(activeTab.value === 'itinerary' && currentDay.value !== 'TODO') initSortable();
+            if(activeTab.value === 'itinerary' && currentDay.value === 'TODO') initTodoSortable();
+            if(activeTab.value === 'shopping') initShoppingSortable();
+            if(activeTab.value === 'info') initInfoSortables();
+            if(activeTab.value === 'expenses' && currentDay.value !== 'Total') initExpSortable();
           });
         });
 
