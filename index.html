@@ -19,7 +19,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- 引入 LocalForage 突破儲存容量限制 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
   
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -540,8 +539,8 @@
           <h3 class="font-bold text-sm text-autumn-primary mb-2"><i class="fa-solid fa-share-nodes"></i> 和旅伴共用行程</h3>
           <p class="text-[11px] text-autumn-muted mb-3 leading-relaxed">將「行程與備用景點」打包成代碼傳給朋友，朋友匯入後就能看一樣的行程，但她的記帳與購物車依然會保持獨立喔！</p>
           <div class="flex gap-2">
-            <button @click="exportData" class="flex-1 bg-autumn-text text-white py-2 rounded-lg text-xs font-medium"><i class="fa-solid fa-upload"></i> 匯出代碼</button>
-            <button @click="importData" class="flex-1 bg-autumn-secondary text-white py-2 rounded-lg text-xs font-medium"><i class="fa-solid fa-download"></i> 匯入代碼</button>
+            <button @click="openExportModal" class="flex-1 bg-autumn-text text-white py-2 rounded-lg text-xs font-medium"><i class="fa-solid fa-upload"></i> 匯出代碼</button>
+            <button @click="openImportModal" class="flex-1 bg-autumn-secondary text-white py-2 rounded-lg text-xs font-medium"><i class="fa-solid fa-download"></i> 匯入代碼</button>
           </div>
         </div>
         
@@ -623,6 +622,32 @@
       <button @click.stop="viewingImage = null" class="absolute top-6 right-6 w-10 h-10 bg-white/20 text-white rounded-full flex items-center justify-center hover:bg-white/40 backdrop-blur-md transition-colors shadow-lg">
         <i class="fa-solid fa-xmark text-lg"></i>
       </button>
+    </div>
+
+    <!-- 大容量匯出 Modal -->
+    <div v-if="showExportModal" class="absolute inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+      <div class="bg-autumn-card w-full max-w-sm rounded-3xl shadow-2xl border border-autumn-border p-5 space-y-4">
+        <h3 class="font-serif text-xl text-autumn-text">匯出行程代碼</h3>
+        <p class="text-xs text-autumn-muted">複製下方方框內的完整代碼並傳給旅伴：</p>
+        <textarea readonly v-model="generatedCode" class="w-full h-40 bg-autumn-bg border border-autumn-border rounded-xl p-3 text-xs outline-none resize-none break-all font-mono"></textarea>
+        <div class="flex gap-3">
+          <button @click="showExportModal = false" class="flex-1 py-2.5 rounded-xl bg-autumn-bg text-autumn-text text-xs font-bold border border-autumn-border">關閉</button>
+          <button @click="copyExportCode" class="flex-1 py-2.5 rounded-xl bg-autumn-primary text-white text-xs font-bold shadow-md"><i class="fa-solid fa-copy mr-1"></i>一鍵複製</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 大容量匯入 Modal -->
+    <div v-if="showImportModal" class="absolute inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+      <div class="bg-autumn-card w-full max-w-sm rounded-3xl shadow-2xl border border-autumn-border p-5 space-y-4">
+        <h3 class="font-serif text-xl text-autumn-text">匯入行程代碼</h3>
+        <p class="text-xs text-autumn-muted">請將旅伴傳給你的完整代碼貼在下方：</p>
+        <textarea v-model="importCodeInput" placeholder="在此貼上長字串代碼..." class="w-full h-40 bg-autumn-bg border border-autumn-border rounded-xl p-3 text-xs outline-none resize-none break-all font-mono focus:border-autumn-primary"></textarea>
+        <div class="flex gap-3">
+          <button @click="showImportModal = false" class="flex-1 py-2.5 rounded-xl bg-autumn-bg text-autumn-text text-xs font-bold border border-autumn-border">取消</button>
+          <button @click="confirmImportCode" class="flex-1 py-2.5 rounded-xl bg-autumn-text text-white text-xs font-bold shadow-md"><i class="fa-solid fa-download mr-1"></i>確認匯入</button>
+        </div>
+      </div>
     </div>
 
     <!-- 底部導航 -->
@@ -775,7 +800,12 @@
         
         const viewingImage = ref(null);
 
-        // 更新儲存版本號，觸發資料庫升級
+        // 匯出/匯入彈窗狀態
+        const showExportModal = ref(false);
+        const showImportModal = ref(false);
+        const generatedCode = ref('');
+        const importCodeInput = ref('');
+
         const STORAGE_KEY = 'seoul_trip_data_2026_v10';
 
         const dayAreas = {
@@ -808,8 +838,6 @@
                 const img = new Image();
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    
-                    // 【畫質升級設定】從 500 升級到 1080 像素
                     const max_size = 1080; 
                     let width = img.width;
                     let height = img.height;
@@ -824,8 +852,6 @@
                     canvas.height = height;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
-                    
-                    // 【畫質升級設定】降低壓縮率，確保圖片清晰度 (0.6 -> 0.85)
                     callback(canvas.toDataURL('image/jpeg', 0.85)); 
                 };
                 img.src = e.target.result;
@@ -1215,18 +1241,15 @@
             todos: todos.value, shoppingList: shoppingList.value, itinerary: itinerary.value,
             expenses: expenses.value, backupSpots: backupSpots.value, generalInfo: generalInfo.value
           };
-          // 寫入 IndexedDB 深層資料庫 (取代原本的 localStorage)
           localforage.setItem(STORAGE_KEY, JSON.stringify(dataToSave)).catch(err => console.error('存檔失敗', err));
         };
 
         watch([todos, shoppingList, itinerary, expenses, backupSpots, generalInfo], () => { saveData(); }, { deep: true });
 
-        // 初始化與無痛資料轉移機制
         onMounted(async () => {
           localforage.config({ name: 'SeoulTrip2026' });
           let savedData = await localforage.getItem(STORAGE_KEY);
 
-          // 如果新資料庫沒有資料，嘗試從舊版 LocalStorage 撈取，進行搬移
           if (!savedData) {
             savedData = localStorage.getItem('seoul_trip_data_2026_v9') || 
                         localStorage.getItem('seoul_trip_data_2026_v8') || 
@@ -1324,22 +1347,40 @@
           });
         });
 
-        const exportData = () => {
+        // 大容量彈窗 匯出/匯入邏輯
+        const openExportModal = () => {
           const shareData = { itinerary: itinerary.value, backupSpots: backupSpots.value, generalInfo: generalInfo.value };
-          const base64Code = btoa(encodeURIComponent(JSON.stringify(shareData)));
-          navigator.clipboard.writeText(base64Code).then(() => alert('✅ 行程代碼已複製成功！\n\n請將這串代碼傳給你的旅伴。')).catch(() => prompt('無法自動複製，請手動複製以下代碼：', base64Code));
+          generatedCode.value = btoa(encodeURIComponent(JSON.stringify(shareData)));
+          showExportModal.value = true;
         };
 
-        const importData = () => {
-          const code = prompt('👉 請在此貼上旅伴傳給你的「行程代碼」：');
-          if (!code) return;
+        const copyExportCode = () => {
+          navigator.clipboard.writeText(generatedCode.value).then(() => {
+            alert('✅ 代碼已複製成功！可以傳給旅伴了。');
+          }).catch(() => {
+            alert('自動複製失敗，請手動長按方框內的文字全選複製。');
+          });
+        };
+
+        const openImportModal = () => {
+          importCodeInput.value = '';
+          showImportModal.value = true;
+        };
+
+        const confirmImportCode = () => {
+          const code = importCodeInput.value.trim();
+          if (!code) return alert('請先貼上代碼！');
           try {
             const parsedData = JSON.parse(decodeURIComponent(atob(code)));
             if(parsedData.itinerary) itinerary.value = parsedData.itinerary;
             if(parsedData.backupSpots) backupSpots.value = parsedData.backupSpots;
             if(parsedData.generalInfo) generalInfo.value = parsedData.generalInfo;
+            showImportModal.value = false;
+            saveData();
             alert('🎉 匯入成功！\n行程與資訊已更新，你的記帳與購物車維持原樣不受影響喔。');
-          } catch (e) { alert('❌ 代碼格式錯誤，請確認完整性。'); }
+          } catch (e) {
+            alert('❌ 代碼格式錯誤，請確認是否有完整複製貼上。');
+          }
         };
 
         return {
@@ -1352,7 +1393,7 @@
           liveExchangeRate, lastRateUpdate, calcInputTwd, calcInputKrw, updateFromTwd, updateFromKrw,
           backupSpots, addEmptyBackup, startEditBackup, saveBackup,
           generalInfo, newInfo, addInfo, startEditInfo, saveInfo,
-          exportData, importData, saveData
+          showExportModal, showImportModal, generatedCode, importCodeInput, openExportModal, copyExportCode, openImportModal, confirmImportCode, saveData
         };
       }
     }).mount('#app');
