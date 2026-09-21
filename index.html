@@ -20,6 +20,8 @@
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+  <!-- 引入 LZ-String 壓縮引擎，大幅縮減代碼長度 -->
+  <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
   
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
@@ -800,13 +802,12 @@
         
         const viewingImage = ref(null);
 
-        // 匯出/匯入彈窗狀態
         const showExportModal = ref(false);
         const showImportModal = ref(false);
         const generatedCode = ref('');
         const importCodeInput = ref('');
 
-        const STORAGE_KEY = 'seoul_trip_data_2026_v10';
+        const STORAGE_KEY = 'seoul_trip_data_2026_v11'; // 更新版號
 
         const dayAreas = {
           'Day 1': '明洞',
@@ -1251,10 +1252,10 @@
           let savedData = await localforage.getItem(STORAGE_KEY);
 
           if (!savedData) {
-            savedData = localStorage.getItem('seoul_trip_data_2026_v9') || 
+            savedData = localStorage.getItem('seoul_trip_data_2026_v10') || 
+                        localStorage.getItem('seoul_trip_data_2026_v9') || 
                         localStorage.getItem('seoul_trip_data_2026_v8') || 
-                        localStorage.getItem('seoul_trip_data_2026_v7') || 
-                        localStorage.getItem('seoul_trip_data_2026_v6');
+                        localStorage.getItem('seoul_trip_data_2026_v7');
             if (savedData) {
                 await localforage.setItem(STORAGE_KEY, savedData);
             }
@@ -1347,16 +1348,17 @@
           });
         });
 
-        // 大容量彈窗 匯出/匯入邏輯
+        // 匯出功能 - 加入 LZ-String 壓縮
         const openExportModal = () => {
           const shareData = { itinerary: itinerary.value, backupSpots: backupSpots.value, generalInfo: generalInfo.value };
-          generatedCode.value = btoa(encodeURIComponent(JSON.stringify(shareData)));
+          // 使用壓縮編碼
+          generatedCode.value = LZString.compressToBase64(JSON.stringify(shareData));
           showExportModal.value = true;
         };
 
         const copyExportCode = () => {
           navigator.clipboard.writeText(generatedCode.value).then(() => {
-            alert('✅ 代碼已複製成功！可以傳給旅伴了。');
+            alert('✅ 代碼已壓縮並複製成功！可以傳給旅伴了。');
           }).catch(() => {
             alert('自動複製失敗，請手動長按方框內的文字全選複製。');
           });
@@ -1367,19 +1369,43 @@
           showImportModal.value = true;
         };
 
+        // 匯入功能 - 強化防呆機制與解壓縮
         const confirmImportCode = () => {
-          const code = importCodeInput.value.trim();
-          if (!code) return alert('請先貼上代碼！');
+          const rawCode = importCodeInput.value.trim();
+          if (!rawCode) return alert('請先貼上代碼！');
+          
+          // 【自動除錯濾網】移除通訊軟體擅自加入的所有空白、換行符號
+          const cleanCode = rawCode.replace(/\s/g, '');
+          
+          let parsedData = null;
+
+          // 1. 嘗試用新版的 LZ-String 解壓縮 (新版代碼)
           try {
-            const parsedData = JSON.parse(decodeURIComponent(atob(code)));
+            if (typeof LZString !== 'undefined') {
+              const decompressed = LZString.decompressFromBase64(cleanCode);
+              if (decompressed) {
+                parsedData = JSON.parse(decompressed);
+              }
+            }
+          } catch (e) { /* 新版解析失敗，往舊版嘗試 */ }
+
+          // 2. 如果新版解析失敗，嘗試用舊版 Base64 解析 (相容舊版代碼)
+          if (!parsedData) {
+            try {
+              parsedData = JSON.parse(decodeURIComponent(atob(cleanCode)));
+            } catch (e) {
+              return alert('❌ 代碼格式依然錯誤。\n請確認「雙方」都已更新到最新版網頁，並重新匯出代碼喔！');
+            }
+          }
+
+          // 正確解析後，套用資料
+          if (parsedData) {
             if(parsedData.itinerary) itinerary.value = parsedData.itinerary;
             if(parsedData.backupSpots) backupSpots.value = parsedData.backupSpots;
             if(parsedData.generalInfo) generalInfo.value = parsedData.generalInfo;
             showImportModal.value = false;
             saveData();
             alert('🎉 匯入成功！\n行程與資訊已更新，你的記帳與購物車維持原樣不受影響喔。');
-          } catch (e) {
-            alert('❌ 代碼格式錯誤，請確認是否有完整複製貼上。');
           }
         };
 
