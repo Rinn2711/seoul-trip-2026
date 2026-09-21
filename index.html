@@ -20,7 +20,7 @@
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
-  <!-- 引入 LZ-String 壓縮引擎，大幅縮減代碼長度 -->
+  <!-- 引入 LZ-String 壓縮引擎 -->
   <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
   
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -807,7 +807,7 @@
         const generatedCode = ref('');
         const importCodeInput = ref('');
 
-        const STORAGE_KEY = 'seoul_trip_data_2026_v11'; // 更新版號
+        const STORAGE_KEY = 'seoul_trip_data_2026_v12'; // 更新至 v12
 
         const dayAreas = {
           'Day 1': '明洞',
@@ -1252,10 +1252,16 @@
           let savedData = await localforage.getItem(STORAGE_KEY);
 
           if (!savedData) {
-            savedData = localStorage.getItem('seoul_trip_data_2026_v10') || 
-                        localStorage.getItem('seoul_trip_data_2026_v9') || 
-                        localStorage.getItem('seoul_trip_data_2026_v8') || 
-                        localStorage.getItem('seoul_trip_data_2026_v7');
+            // 依序嘗試讀取舊版資料
+            savedData = await localforage.getItem('seoul_trip_data_2026_v11');
+            if(!savedData) savedData = await localforage.getItem('seoul_trip_data_2026_v10');
+            
+            if (!savedData) {
+                savedData = localStorage.getItem('seoul_trip_data_2026_v10') || 
+                            localStorage.getItem('seoul_trip_data_2026_v9') || 
+                            localStorage.getItem('seoul_trip_data_2026_v8') || 
+                            localStorage.getItem('seoul_trip_data_2026_v7');
+            }
             if (savedData) {
                 await localforage.setItem(STORAGE_KEY, savedData);
             }
@@ -1348,17 +1354,17 @@
           });
         });
 
-        // 匯出功能 - 加入 LZ-String 壓縮
+        // 🌟 匯出功能 - 升級 URL 安全級別的終極壓縮
         const openExportModal = () => {
           const shareData = { itinerary: itinerary.value, backupSpots: backupSpots.value, generalInfo: generalInfo.value };
-          // 使用壓縮編碼
-          generatedCode.value = LZString.compressToBase64(JSON.stringify(shareData));
+          // 使用 URI 安全編碼，完全免疫通訊軟體符號干擾
+          generatedCode.value = LZString.compressToEncodedURIComponent(JSON.stringify(shareData));
           showExportModal.value = true;
         };
 
         const copyExportCode = () => {
           navigator.clipboard.writeText(generatedCode.value).then(() => {
-            alert('✅ 代碼已壓縮並複製成功！可以傳給旅伴了。');
+            alert('✅ 代碼已升級並複製成功！可以傳給旅伴了。');
           }).catch(() => {
             alert('自動複製失敗，請手動長按方框內的文字全選複製。');
           });
@@ -1369,7 +1375,7 @@
           showImportModal.value = true;
         };
 
-        // 匯入功能 - 強化防呆機制與解壓縮
+        // 🌟 匯入功能 - 強化防呆機制與多重解壓嘗試
         const confirmImportCode = () => {
           const rawCode = importCodeInput.value.trim();
           if (!rawCode) return alert('請先貼上代碼！');
@@ -1379,22 +1385,28 @@
           
           let parsedData = null;
 
-          // 1. 嘗試用新版的 LZ-String 解壓縮 (新版代碼)
           try {
             if (typeof LZString !== 'undefined') {
-              const decompressed = LZString.decompressFromBase64(cleanCode);
+              // 1. 先嘗試新版 V12 的 URI 安全解壓縮
+              let decompressed = LZString.decompressFromEncodedURIComponent(cleanCode);
+              
+              // 2. 如果失敗，嘗試 V11 的 Base64 解壓縮 (相容舊版防錯)
+              if (!decompressed) {
+                  decompressed = LZString.decompressFromBase64(cleanCode);
+              }
+              
               if (decompressed) {
-                parsedData = JSON.parse(decompressed);
+                  parsedData = JSON.parse(decompressed);
               }
             }
-          } catch (e) { /* 新版解析失敗，往舊版嘗試 */ }
+          } catch (e) { console.error('解壓嘗試失敗', e); }
 
-          // 2. 如果新版解析失敗，嘗試用舊版 Base64 解析 (相容舊版代碼)
+          // 3. 如果還是失敗，嘗試最原始的解碼 (如果旅伴用超舊版)
           if (!parsedData) {
             try {
               parsedData = JSON.parse(decodeURIComponent(atob(cleanCode)));
             } catch (e) {
-              return alert('❌ 代碼格式依然錯誤。\n請確認「雙方」都已更新到最新版網頁，並重新匯出代碼喔！');
+              return alert('❌ 代碼依然無法解析。\n\n【關鍵確認】：\n1. 請確認你的旅伴「也已經更新」到最新版網頁（非常重要！）\n2. 請旅伴更新後重新匯出一次代碼。\n3. 確認複製時沒有漏掉任何字！');
             }
           }
 
